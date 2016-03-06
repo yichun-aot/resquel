@@ -1,5 +1,5 @@
 Resquel: Convert your SQL database into a REST API.
----------------------------------------------------
+====================================================
 This is a lightwieght Express.js middleware library that is able to convert SQL databases into a REST API. This library also works
 seamlessly with the [Form.io](https://form.io) platform where you can build Angular.js and React.js applications on top of your SQL database. Please go
 to https://form.io to learn more.
@@ -7,12 +7,11 @@ to https://form.io to learn more.
 **For now, this library only supports Microsoft SQL Server, but we will be adding new databases in the future.**
 
 How it works
-=====================
+--------------
 This module works by assigning routes to specific queries, which you define, that are executed when the routes are triggered. For example,
 lets say you have the following customer table.
 
-customer
-===========
+**customer**
   - firstName
   - lastName
   - email
@@ -28,7 +27,7 @@ This library is able to convert this into the following REST API.
 Please refer to the **example** folder to see how this library is used to achieve the following.
 
 How to use
-=============
+-----------------
 This library is pretty simple. You include it in your Express.js application like the following.
 
 ```
