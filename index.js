@@ -42,7 +42,7 @@ module.exports = function(config) {
 
     // Iterate through each routes.
     _.each(config.routes, function(route) {
-      router[route.method](route.endpoint, function(req, res) {
+      router[route.method.toLowerCase()](route.endpoint, function(req, res) {
 
         // Get the query to execute.
         var query = route.query.replace(/{{\s+([^}]+)\s+}}/g, function() {
