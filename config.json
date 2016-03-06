@@ -1,0 +1,38 @@
+{
+  "db": {
+    "user": "-- YOUR DATABASE USERNAME --",
+    "password": "-- YOUR DATABASE PASSWORD --",
+    "server": "-- YOUR DATABASE SERVER --",
+    "database": "-- YOUR DATABASE NAME --",
+    "options": {
+      "instanceName": "-- THE SERVER INSTANCE --"
+    }
+  },
+  "routes": [
+    {
+      "method": "get",
+      "endpoint": "/customer",
+      "query": "SELECT * FROM customers;"
+    },
+    {
+      "method": "post",
+      "endpoint": "/customer",
+      "query": "INSERT INTO customers (firstName, lastName, email) VALUES ('{{ data.firstName }}', '{{ data.lastName }}', '{{ data.email }}');SELECT * FROM customers WHERE id=SCOPE_IDENTITY();"
+    },
+    {
+      "method": "get",
+      "endpoint": "/customer/:customerId",
+      "query": "SELECT * FROM customers WHERE id={{ params.customerId }};"
+    },
+    {
+      "method": "put",
+      "endpoint": "/customer/:customerId",
+      "query": "UPDATE customers SET firstName='{{ data.firstName }}', lastName='{{ data.lastName }}', email='{{ data.email }}' WHERE id={{ params.customerId }};SELECT * FROM customers WHERE id={{ params.customerId }};"
+    },
+    {
+      "method": "delete",
+      "endpoint": "/customer/:customerId",
+      "query": "DELETE FROM customers WHERE id={{ params.customerId }};"
+    }
+  ]
+}

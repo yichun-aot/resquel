@@ -1,0 +1,12 @@
+{
+  "port": 3000,
+  "db": {
+    "user": "-- YOUR DATABASE USERNAME --",
+    "password": "-- YOUR DATABASE PASSWORD --",
+    "server": "-- YOUR DATABASE SERVER --",
+    "database": "-- YOUR DATABASE --",
+    "options": {
+      "instanceName": "-- YOUR DATABASE INSTANCE NAME --"
+    }
+  }
+}
