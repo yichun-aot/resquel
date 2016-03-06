@@ -13,17 +13,17 @@ lets say you have the following customer table.
 
 customer
 ===========
-    - firstName
-    - lastName
-    - email
+  - firstName
+  - lastName
+  - email
 
 This library is able to convert this into the following REST API.
 
-    - GET: /customer - Returns a list of all customers.
-    - GET: /customer/:customerId - Returns a single customer
-    - POST: /customer - Creates a new customer
-    - PUT: /customer/:customerId - Updates a customer
-    - DELETE: /customer/:customerId - Deletes a customer.
+  - GET: /customer - Returns a list of all customers.
+  - GET: /customer/:customerId - Returns a single customer
+  - POST: /customer - Creates a new customer
+  - PUT: /customer/:customerId - Updates a customer
+  - DELETE: /customer/:customerId - Deletes a customer.
 
 Please refer to the **example** folder to see how this library is used to achieve the following.
 
@@ -90,9 +90,9 @@ The configuration passed into the resquel library is where the magic happens.
 
 Each route defines a new endpoint and maps a query to that enpoint. Within the query, you have access to the following.
 
-    - **data** - The req.body of the request.
-    - **params** - The req.params of the request. Like when you use /customer/:customerId
-    - **query** - The req.query of the request. Used with GET parameters like this /customer?company=1234
+  - **data** - The req.body of the request.
+  - **params** - The req.params of the request. Like when you use /customer/:customerId
+  - **query** - The req.query of the request. Used with GET parameters like this /customer?company=1234
 
 
 Enjoy!
