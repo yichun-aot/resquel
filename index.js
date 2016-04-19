@@ -4,7 +4,10 @@ var methodOverride = require('method-override');
 var router = express.Router();
 var sql = require('mssql');
 var _ = require('lodash');
+var Q = require('q');
 module.exports = function(config) {
+  var deferred = Q.defer();
+  router.ready = deferred.promise;
 
   // Add Middleware necessary for REST API's
   router.use(bodyParser.urlencoded({extended: true}));
@@ -22,6 +25,7 @@ module.exports = function(config) {
     if (err) {
       console.log('Could not connect to database.');
       console.log(err);
+      deferred.reject(err);
       return;
     }
 
@@ -44,69 +48,123 @@ module.exports = function(config) {
     _.each(config.routes, function(route) {
       router[route.method.toLowerCase()](route.endpoint, function(req, res) {
 
-        // Get the query to execute.
-        var query = route.query.replace(/{{\s+([^}]+)\s+}}/g, function() {
-          var value = '';
-          var tempData = null;
+        /**
+         * Execute a query.
+         *
+         * @param query
+         */
+        var makeRequest = function() {
 
-          // Replace all others with the data from the submission.
-          var parts = arguments[1].split('.');
-          if (parts[0] === 'data') {
-            tempData = _.clone(req.body);
-          }
-          else if (parts[0] === 'params') {
-            tempData = _.clone(req.params);
-          }
-          else if (parts[0] === 'query') {
-            tempData = _.clone(req.query);
-          }
+          // Get the query.
+          var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
 
-          if (!tempData) {
-            return '';
-          }
+          // Get the query to execute.
+          query = query.replace(/{{\s+([^}]+)\s+}}/g, function() {
+            var value = '';
+            var tempData = null;
 
-          for (var i = 0; i < parts.length; i++) {
-            if (tempData.hasOwnProperty(parts[i])) {
-              tempData = value = tempData[parts[i]];
+            // Replace all others with the data from the submission.
+            var parts = arguments[1].split('.');
+            if (parts[0] === 'params') {
+              tempData = _.clone(req.params);
             }
-          }
-
-          // Make sure we only set the strings or numbers.
-          switch (typeof value) {
-            case 'string':
-              return escape(value);
-            case 'number':
-              return value;
-            default:
-              return '';
-          }
-        }.bind(this));
-
-        // Perform the query.
-        (new sql.Request(connection)).query(query).then(function(recordset) {
-          if (!recordset) {
-            res.status(200).send('OK');
-          }
-          else {
-            if (
-              (_.isArray(recordset) && recordset.length === 1) &&
-              (
-                (route.method === 'post') ||
-                (route.method === 'put') ||
-                (route.method === 'get' && Object.keys(req.params).length !== 0)
-              )
-            ) {
-              res.status(200).send(recordset[0]);
+            else if (parts[0] === 'query') {
+              tempData = _.clone(req.query);
             }
             else {
-              res.status(200).send(recordset);
+              tempData = _.clone(req.body);
             }
-          }
-        }).catch(function(err) {
-          res.status(500).send(err.message);
-        });
+
+            if (!tempData) {
+              return '';
+            }
+
+            for (var i = 0; i < parts.length; i++) {
+              if (tempData.hasOwnProperty(parts[i])) {
+                tempData = value = tempData[parts[i]];
+              }
+            }
+
+            // Make sure we only set the strings or numbers.
+            switch (typeof value) {
+              case 'string':
+                return escape(value);
+              case 'number':
+                return value;
+              default:
+                return '';
+            }
+          }.bind(this));
+
+          // Perform the query.
+          (new sql.Request(connection)).query(query).then(function(recordset) {
+            res.result = {
+              status: 200,
+              data: 'OK'
+            };
+
+            if (recordset) {
+              if (
+                (_.isArray(recordset) && recordset.length === 1) &&
+                (
+                  (route.method === 'post') ||
+                  (route.method === 'put') ||
+                  (route.method === 'get' && Object.keys(req.params).length !== 0)
+                )
+              ) {
+                res.result.data = recordset[0];
+              }
+              else {
+                res.result.data = recordset;
+              }
+            }
+
+            // Let the route also define its own handler.
+            if (
+              route.hasOwnProperty('after') &&
+              (typeof route.after === 'function')
+            ) {
+
+              // Handle the route.
+              route.after(req, res, function(err, result) {
+                result = result || res.result;
+                if (err) {
+                  return res.status(500).send(err.message);
+                }
+
+                // Send the result.
+                res.status(result.status).send(result.data);
+              });
+            }
+            else {
+
+              // Send the result.
+              res.status(res.result.status).send(res.result.data);
+            }
+          }).catch(function(err) {
+            res.status(500).send(err.message);
+          });
+        };
+
+        // Ensure they can hook into the before handler.
+        if (route.hasOwnProperty('before') && (typeof route.before === 'function')) {
+          // Handle the route.
+          route.before(req, res, function(err) {
+            if (err) {
+              return res.status(500).send(err.message);
+            }
+
+            makeRequest();
+          });
+        }
+        else {
+          makeRequest();
+        }
       });
     });
+
+    // Say we are ready.
+    deferred.resolve();
   });
 
   return router;
