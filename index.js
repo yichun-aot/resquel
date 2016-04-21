@@ -48,6 +48,44 @@ module.exports = function(config) {
     _.each(config.routes, function(route) {
       router[route.method.toLowerCase()](route.endpoint, function(req, res) {
 
+        var queryToken = /{{\s+([^}]+)\s+}}/g;
+        var queryReplace = function() {
+          var value = '';
+          var tempData = null;
+
+          // Replace all others with the data from the submission.
+          var parts = arguments[1].split('.');
+          if (parts[0] === 'params') {
+            tempData = _.clone(req.params);
+          }
+          else if (parts[0] === 'query') {
+            tempData = _.clone(req.query);
+          }
+          else {
+            tempData = _.clone(req.body);
+          }
+
+          if (!tempData) {
+            return '';
+          }
+
+          for (var i = 0; i < parts.length; i++) {
+            if (tempData.hasOwnProperty(parts[i])) {
+              tempData = value = tempData[parts[i]];
+            }
+          }
+
+          // Make sure we only set the strings or numbers.
+          switch (typeof value) {
+            case 'string':
+              return escape(value);
+            case 'number':
+              return value;
+            default:
+              return '';
+          }
+        };
+
         /**
          * Execute a query.
          *
@@ -57,93 +95,79 @@ module.exports = function(config) {
 
           // Get the query.
           var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
+          var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
 
           // Get the query to execute.
-          query = query.replace(/{{\s+([^}]+)\s+}}/g, function() {
-            var value = '';
-            var tempData = null;
+          query = query.replace(queryToken, queryReplace.bind(this));
 
-            // Replace all others with the data from the submission.
-            var parts = arguments[1].split('.');
-            if (parts[0] === 'params') {
-              tempData = _.clone(req.params);
-            }
-            else if (parts[0] === 'query') {
-              tempData = _.clone(req.query);
-            }
-            else {
-              tempData = _.clone(req.body);
-            }
-
-            if (!tempData) {
-              return '';
-            }
-
-            for (var i = 0; i < parts.length; i++) {
-              if (tempData.hasOwnProperty(parts[i])) {
-                tempData = value = tempData[parts[i]];
-              }
-            }
-
-            // Make sure we only set the strings or numbers.
-            switch (typeof value) {
-              case 'string':
-                return escape(value);
-              case 'number':
-                return value;
-              default:
-                return '';
-            }
-          }.bind(this));
+          // Perform a count query.
+          if (count) {
+            count = count.replace(queryToken, queryReplace.bind(this));
+          }
 
           // Perform the query.
-          (new sql.Request(connection)).query(query).then(function(recordset) {
-            res.result = {
-              status: 200,
-              data: 'OK'
-            };
+          var performQuery = function(result) {
+            // Perform the query.
+            (new sql.Request(connection)).query(query).then(function(recordset) {
+              res.result = _.assign({
+                status: 200,
+                data: 'OK'
+              }, result);
 
-            if (recordset) {
+              if (recordset) {
+                if (
+                  (_.isArray(recordset) && recordset.length === 1) &&
+                  (
+                    (route.method === 'post') ||
+                    (route.method === 'put') ||
+                    (route.method === 'get' && Object.keys(req.params).length !== 0)
+                  )
+                ) {
+                  res.result.data = recordset[0];
+                }
+                else {
+                  res.result.data = recordset;
+                }
+              }
+
+              // Let the route also define its own handler.
               if (
-                (_.isArray(recordset) && recordset.length === 1) &&
-                (
-                  (route.method === 'post') ||
-                  (route.method === 'put') ||
-                  (route.method === 'get' && Object.keys(req.params).length !== 0)
-                )
+                route.hasOwnProperty('after') &&
+                (typeof route.after === 'function')
               ) {
-                res.result.data = recordset[0];
+
+                // Handle the route.
+                route.after(req, res, function(err, result) {
+                  result = result || res.result;
+                  if (err) {
+                    return res.status(500).send(err.message);
+                  }
+
+                  // Send the result.
+                  res.status(result.status).send(result);
+                });
               }
               else {
-                res.result.data = recordset;
-              }
-            }
-
-            // Let the route also define its own handler.
-            if (
-              route.hasOwnProperty('after') &&
-              (typeof route.after === 'function')
-            ) {
-
-              // Handle the route.
-              route.after(req, res, function(err, result) {
-                result = result || res.result;
-                if (err) {
-                  return res.status(500).send(err.message);
-                }
 
                 // Send the result.
-                res.status(result.status).send(result.data);
-              });
-            }
-            else {
+                res.status(res.result.status).send(res.result);
+              }
+            }).catch(function(err) {
+              res.status(500).send(err.message);
+            });
+          };
 
-              // Send the result.
-              res.status(res.result.status).send(res.result.data);
-            }
-          }).catch(function(err) {
-            res.status(500).send(err.message);
-          });
+          // Execute a count query.
+          if (count) {
+            (new sql.Request(connection)).query(count).then(function(recordset) {
+              performQuery({
+                total: recordset[0].total
+              });
+            });
+          }
+          else {
+            performQuery();
+          }
         };
 
         // Ensure they can hook into the before handler.
