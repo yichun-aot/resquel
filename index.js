@@ -100,6 +100,11 @@ module.exports = function(config) {
           // Get the query to execute.
           query = query.replace(queryToken, queryReplace.bind(this));
 
+          // If there is no query then respond with no change.
+          if (!query) {
+            return res.status(204).json({});
+          }
+
           // Perform a count query.
           if (count) {
             count = count.replace(queryToken, queryReplace.bind(this));
