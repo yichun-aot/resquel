@@ -23,12 +23,12 @@ module.exports = function(config) {
   }
 
   // Attempt to override the default sql type. Set to mssql for backwards compatibility.
-  var type = types.mssql;
+  var sql = types.mssql;
   if (_.has(config, 'type') && _.has(types, _.get(config, 'type'))) {
-    type = _.get(types, _.get(config, 'type'));
+    sql = _.get(types, _.get(config, 'type'));
   }
 
-  type
+  sql
     .connect(config.db)
     .catch(function(err) {
       if (err) {
@@ -61,15 +61,17 @@ module.exports = function(config) {
         }
 
         Q()
-          .then(type.before(route, req, res))
+          .then(sql.before(route, req, res))
           .then(function() {
             if (count) {
-              return Q.fcall(type.count, route, count, query, res);
+              return Q.fcall(sql.count, route, count, query, res);
             }
 
-            return Q.fcall(type.query, route, query, res);
+            return Q.fcall(sql.query, route, query, res);
           })
-          .then(type.after(route, req, res))
+          .then(function(res) {
+            return sql.after(route, req, res)
+          })
           .catch(function(err) {
             return res.status(500).send(err.message || err);
           })

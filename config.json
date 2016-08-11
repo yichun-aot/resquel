@@ -1,4 +1,5 @@
 {
+  "type": "mssql",
   "db": {
     "user": "-- YOUR DATABASE USERNAME --",
     "password": "-- YOUR DATABASE PASSWORD --",
