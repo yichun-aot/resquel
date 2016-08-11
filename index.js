@@ -4,13 +4,12 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
 var router = express.Router();
-var sql = require('mssql');
 var _ = require('lodash');
 var Q = require('q');
 
 module.exports = function(config) {
-  var deferred = Q.defer();
-  router.ready = deferred.promise;
+  var util = require('./src/util');
+  var types = require('./src/types')(util);
 
   // Add Middleware necessary for REST API's
   router.use(bodyParser.urlencoded({extended: true}));
@@ -23,177 +22,60 @@ module.exports = function(config) {
     router.use(basicAuth(config.auth.username, config.auth.password));
   }
 
-  var connection = new sql.Connection(config.db);
-  connection.connect(function(err) {
-    if (err) {
-      console.log('Could not connect to database.'); // eslint-disable-line no-console
-      console.log(err); // eslint-disable-line no-console
-      deferred.reject(err);
-      return;
-    }
+  // Attempt to override the default sql type. Set to mssql for backwards compatibility.
+  var type = types.mssql;
+  if (_.has(config, 'type') && _.has(types, _.get(config, 'type'))) {
+    type = _.get(types, _.get(config, 'type'));
+  }
 
-    // Escape a string for SQL injection.
-    var escape = function(query) {
-      return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(s) { // eslint-disable-line no-control-regex
-        switch (s) {
-          case '\0': return '\\0';
-          case '\n': return '\\n';
-          case '\r': return '\\r';
-          case '\b': return '\\b';
-          case '\t': return '\\t';
-          case '\x1a': return '\\Z';
-          default: return '\\'+s;
-        }
-      });
-    };
+  type
+    .connect(config.db)
+    .catch(function(err) {
+      if (err) {
+        console.log('Could not connect to database.'); // eslint-disable-line no-console
+        console.log(err); // eslint-disable-line no-console
+      }
+    })
+    .done();
 
     // Iterate through each routes.
     _.each(config.routes, function(route) {
       router[route.method.toLowerCase()](route.endpoint, function(req, res) {
         var queryToken = /{{\s+([^}]+)\s+}}/g;
-        var queryReplace = function() {
-          var value = '';
-          var tempData = null;
 
-          // Replace all others with the data from the submission.
-          var parts = arguments[1].split('.');
-          if (parts[0] === 'params') {
-            tempData = _.clone(req.params);
-          }
-          else if (parts[0] === 'query') {
-            tempData = _.clone(req.query);
-          }
-          else {
-            tempData = _.clone(req.body);
-          }
+        // Get the query.
+        var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
+        var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
 
-          if (!tempData) {
-            return '';
-          }
+        // Get the query to execute.
+        query = query.replace(queryToken, util.queryReplace(req).bind(this));
 
-          for (var i = 0; i < parts.length; i++) {
-            if (tempData.hasOwnProperty(parts[i])) {
-              tempData = value = tempData[parts[i]];
-            }
-          }
+        // If there is no query then respond with no change.
+        if (!query) {
+          return res.status(204).json({});
+        }
 
-          // Make sure we only set the strings or numbers.
-          switch (typeof value) {
-            case 'string':
-              return escape(value);
-            case 'number':
-              return value;
-            default:
-              return '';
-          }
-        };
+        // Perform a count query.
+        if (count) {
+          count = count.replace(queryToken, util.queryReplace(req).bind(this));
+        }
 
-        /**
-         * Execute a query.
-         *
-         * @param query
-         */
-        var makeRequest = function() {
-          // Get the query.
-          var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
-          var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
-
-          // Get the query to execute.
-          query = query.replace(queryToken, queryReplace.bind(this));
-
-          // If there is no query then respond with no change.
-          if (!query) {
-            return res.status(204).json({});
-          }
-
-          // Perform a count query.
-          if (count) {
-            count = count.replace(queryToken, queryReplace.bind(this));
-          }
-
-          // Perform the query.
-          var performQuery = function(result) {
-            // Perform the query.
-            (new sql.Request(connection)).query(query).then(function(recordset) {
-              res.result = _.assign({
-                status: 200,
-                data: 'OK'
-              }, result);
-
-              if (recordset) {
-                if (
-                  (_.isArray(recordset) && recordset.length === 1) &&
-                  (
-                    (route.method === 'post') ||
-                    (route.method === 'put') ||
-                    (route.method === 'get' && Object.keys(req.params).length !== 0)
-                  )
-                ) {
-                  res.result.data = recordset[0];
-                }
-                else {
-                  res.result.data = recordset;
-                }
-              }
-
-              // Let the route also define its own handler.
-              if (
-                route.hasOwnProperty('after') &&
-                (typeof route.after === 'function')
-              ) {
-                // Handle the route.
-                route.after(req, res, function(err, result) {
-                  result = result || res.result;
-                  if (err) {
-                    return res.status(500).send(err.message);
-                  }
-
-                  // Send the result.
-                  res.status(result.status).send(result);
-                });
-              }
-              else {
-                // Send the result.
-                res.status(res.result.status).send(res.result);
-              }
-            }).catch(function(err) {
-              res.status(500).send(err.message);
-            });
-          };
-
-          // Execute a count query.
-          if (count) {
-            (new sql.Request(connection)).query(count).then(function(recordset) {
-              performQuery({
-                total: recordset[0].total
-              });
-            });
-          }
-          else {
-            performQuery();
-          }
-        };
-
-        // Ensure they can hook into the before handler.
-        if (route.hasOwnProperty('before') && (typeof route.before === 'function')) {
-          // Handle the route.
-          route.before(req, res, function(err) {
-            if (err) {
-              return res.status(500).send(err.message);
+        Q()
+          .then(type.before(route, req, res))
+          .then(function() {
+            if (count) {
+              return Q.fcall(type.count, route, count, query, res);
             }
 
-            makeRequest();
-          });
-        }
-        else {
-          makeRequest();
-        }
+            return Q.fcall(type.query, route, query, res);
+          })
+          .then(type.after(route, req, res))
+          .catch(function(err) {
+            return res.status(500).send(err.message || err);
+          })
+          .done();
       });
     });
-
-    // Say we are ready.
-    deferred.resolve();
-  });
 
   return router;
 };
