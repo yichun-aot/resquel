@@ -26,23 +26,23 @@ module.exports = function(config) {
   var connection = new sql.Connection(config.db);
   connection.connect(function(err) {
     if (err) {
-      console.log('Could not connect to database.');
-      console.log(err);
+      console.log('Could not connect to database.'); // eslint-disable-line no-console
+      console.log(err); // eslint-disable-line no-console
       deferred.reject(err);
       return;
     }
 
     // Escape a string for SQL injection.
     var escape = function(query) {
-      return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(s) {
-        switch(s) {
-          case "\0": return "\\0";
-          case "\n": return "\\n";
-          case "\r": return "\\r";
-          case "\b": return "\\b";
-          case "\t": return "\\t";
-          case "\x1a": return "\\Z";
-          default: return "\\"+s;
+      return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(s) { // eslint-disable-line no-control-regex
+        switch (s) {
+          case '\0': return '\\0';
+          case '\n': return '\\n';
+          case '\r': return '\\r';
+          case '\b': return '\\b';
+          case '\t': return '\\t';
+          case '\x1a': return '\\Z';
+          default: return '\\'+s;
         }
       });
     };
@@ -50,7 +50,6 @@ module.exports = function(config) {
     // Iterate through each routes.
     _.each(config.routes, function(route) {
       router[route.method.toLowerCase()](route.endpoint, function(req, res) {
-
         var queryToken = /{{\s+([^}]+)\s+}}/g;
         var queryReplace = function() {
           var value = '';
@@ -95,7 +94,6 @@ module.exports = function(config) {
          * @param query
          */
         var makeRequest = function() {
-
           // Get the query.
           var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
           var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
@@ -143,7 +141,6 @@ module.exports = function(config) {
                 route.hasOwnProperty('after') &&
                 (typeof route.after === 'function')
               ) {
-
                 // Handle the route.
                 route.after(req, res, function(err, result) {
                   result = result || res.result;
@@ -156,7 +153,6 @@ module.exports = function(config) {
                 });
               }
               else {
-
                 // Send the result.
                 res.status(res.result.status).send(res.result);
               }
