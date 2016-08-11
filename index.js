@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
@@ -5,6 +7,7 @@ var router = express.Router();
 var sql = require('mssql');
 var _ = require('lodash');
 var Q = require('q');
+
 module.exports = function(config) {
   var deferred = Q.defer();
   router.ready = deferred.promise;
