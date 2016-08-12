@@ -47,8 +47,9 @@ module.exports = function(config) {
         var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
         var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
 
+        // @TODO: Fix this.
         // Get the query to execute.
-        query = query.replace(queryToken, util.queryReplace(req).bind(this));
+        // query = query.replace(queryToken, util.queryReplace(req).bind(this));
 
         // If there is no query then respond with no change.
         if (!query) {
@@ -73,6 +74,7 @@ module.exports = function(config) {
             return sql.after(route, req, res)
           })
           .catch(function(err) {
+            console.log(err);
             return res.status(500).send(err.message || err);
           })
           .done();
