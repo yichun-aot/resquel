@@ -1,5 +1,7 @@
 'use strict';
 
+var _ = require('lodash');
+
 module.exports = {
   // Escape a string for SQL injection.
   escape: function(query) {
@@ -16,21 +18,36 @@ module.exports = {
     });
   },
 
-  queryReplace: function(req) {
+  queryReplace: function(query, req) {
     var value = '';
-    var tempData = null;
+    var tempData = {};
 
-    // Replace all others with the data from the submission.
-    var parts = arguments[1].split('.');
-    if (parts[0] === 'params') {
-      tempData = _.clone(req.params);
+    // Start building the core data obj to replace string properties with.
+    if (_.has(req, 'body.request')) {
+      tempData = _.assign(tempData, _.get(req, 'body.request'));
     }
-    else if (parts[0] === 'query') {
-      tempData = _.clone(req.query);
+
+    // Let the params have priority over request body data.
+    if (_.has(req, 'params')) {
+      tempData = _.assign(tempData, _.get(req, 'params'));
     }
-    else {
-      tempData = _.clone(req.body);
+
+    // Let the query have priority over request body data.
+    if (_.has(req, 'query')) {
+      tempData = _.assign(tempData, _.get(req, 'query'));
     }
+
+    //// Replace all others with the data from the submission.
+    //var parts = arguments[0]; //.split('.');
+    //if (parts[0] === 'params') {
+    //  tempData = _.clone(req.params);
+    //}
+    //else if (parts[0] === 'query') {
+    //  tempData = _.clone(req.query);
+    //}
+    //else {
+    //  tempData = _.clone(req.body);
+    //}
 
     if (!tempData) {
       return '';

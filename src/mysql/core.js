@@ -3,6 +3,7 @@
 var Q = require('q');
 var _ = require('lodash');
 var sql = require('mysql');
+var debug = console.log;
 
 module.exports = function(util) {
   var connection = null;
@@ -81,6 +82,9 @@ module.exports = function(util) {
   };
 
   var before = function before(route, req, res) {
+    debug('Before:');
+    debug(route);
+
     // Ensure they can hook into the before handler.
     if (route.hasOwnProperty('before') && (typeof route.before === 'function')) {
       // Handle the route.
@@ -97,6 +101,9 @@ module.exports = function(util) {
   };
 
   var after = function after(route, req, res) {
+    debug('After:');
+    debug(route);
+
     // Let the route also define its own handler.
     if (
       route.hasOwnProperty('after') &&
@@ -110,11 +117,14 @@ module.exports = function(util) {
         }
 
         // Send the result.
+        debug('Result:');
+        debug(result);
         return res.status(result.status).send(result);
       });
     }
 
     // Send the result.
+    debug(res.result);
     return res.status(res.result.status).send(res.result);
   };
 
