@@ -3,7 +3,7 @@
 var Q = require('q');
 var _ = require('lodash');
 var sql = require('mysql');
-var debug = console.log;
+var debug = require('debug')('resquel:mysql');
 
 module.exports = function(util) {
   var connection = null;
@@ -31,6 +31,9 @@ module.exports = function(util) {
     if (_.has(config, 'database')) {
       configuration.database = _.get(config, 'database');
     }
+
+    // Enable multiple statement commands.
+    configuration.multipleStatements = true;
 
     var db = sql.createConnection(configuration);
     return Q.fcall(db.connect.bind(db))
@@ -67,8 +70,10 @@ module.exports = function(util) {
    * @param result
    */
   var query = function query(route, query, res, result) {
+    debug(query);
     return request(query)
       .then(function(response) {
+        debug(response);
         res.result = _.assign({
           status: 200,
           data: 'OK'
@@ -88,7 +93,7 @@ module.exports = function(util) {
     // Ensure they can hook into the before handler.
     if (route.hasOwnProperty('before') && (typeof route.before === 'function')) {
       // Handle the route.
-      route.before(req, res, function(err) {
+      return route.before(req, res, function(err) {
         if (err) {
           throw err;
         }
@@ -110,7 +115,7 @@ module.exports = function(util) {
       (typeof route.after === 'function')
     ) {
       // Handle the route.
-      route.after(req, res, function(err, result) {
+      return route.after(req, res, function(err, result) {
         result = result || res.result;
         if (err) {
           throw err;

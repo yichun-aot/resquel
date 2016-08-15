@@ -6,6 +6,7 @@ var methodOverride = require('method-override');
 var router = express.Router();
 var _ = require('lodash');
 var Q = require('q');
+var debug = require('debug')('resquel:core');
 
 module.exports = function(config) {
   var util = require('./src/util');
@@ -47,8 +48,11 @@ module.exports = function(config) {
         var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
         var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
 
+        var data = util.getRequestData(req);
+
         // Get the query to execute.
-         query = query.replace(queryToken, util.queryReplace(query, req));
+        query = query.replace(queryToken, util.queryReplace(data));
+        debug(query);
 
         // If there is no query then respond with no change.
         if (!query) {
@@ -57,7 +61,8 @@ module.exports = function(config) {
 
         // Perform a count query.
         if (count) {
-          count = count.replace(queryToken, util.queryReplace(query, req));
+          count = count.replace(queryToken, util.queryReplace(data));
+          debug(count);
         }
 
         Q()

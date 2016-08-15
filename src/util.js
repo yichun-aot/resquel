@@ -2,71 +2,75 @@
 
 var _ = require('lodash');
 
-module.exports = {
-  // Escape a string for SQL injection.
-  escape: function(query) {
-    return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(s) { // eslint-disable-line no-control-regex
-      switch (s) {
-        case '\0': return '\\0';
-        case '\n': return '\\n';
-        case '\r': return '\\r';
-        case '\b': return '\\b';
-        case '\t': return '\\t';
-        case '\x1a': return '\\Z';
-        default: return '\\'+s;
-      }
-    });
-  },
+// Escape a string for SQL injection.
+var escape = function(query) {
+  return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(s) { // eslint-disable-line no-control-regex
+    switch (s) {
+      case '\0':
+        return '\\0';
+      case '\n':
+        return '\\n';
+      case '\r':
+        return '\\r';
+      case '\b':
+        return '\\b';
+      case '\t':
+        return '\\t';
+      case '\x1a':
+        return '\\Z';
+      default:
+        return '\\' + s;
+    }
+  });
+};
 
-  queryReplace: function(query, req) {
+var getRequestData = function(req) {
+  var data = {};
+
+  // Start building the core data obj to replace string properties with.
+  if (_.has(req, 'body.request')) {
+    data = _.assign(data, _.get(req, 'body.request'));
+  }
+
+  // Let the params have priority over request body data.
+  if (_.has(req, 'params')) {
+    data = _.assign(data, _.get(req, 'params'));
+  }
+
+  // Let the query have priority over request body data.
+  if (_.has(req, 'query')) {
+    data = _.assign(data, _.get(req, 'query'));
+  }
+
+  return data;
+};
+
+var queryReplace = function(data) {
+  return function() {
     var value = '';
-    var tempData = {};
+    var args = Array.prototype.slice.call(arguments);
 
-    // Start building the core data obj to replace string properties with.
-    if (_.has(req, 'body.request')) {
-      tempData = _.assign(tempData, _.get(req, 'body.request'));
+    if (!(args instanceof Array) || args.length < 2) {
+      return value;
     }
 
-    // Let the params have priority over request body data.
-    if (_.has(req, 'params')) {
-      tempData = _.assign(tempData, _.get(req, 'params'));
-    }
-
-    // Let the query have priority over request body data.
-    if (_.has(req, 'query')) {
-      tempData = _.assign(tempData, _.get(req, 'query'));
-    }
-
-    //// Replace all others with the data from the submission.
-    //var parts = arguments[0]; //.split('.');
-    //if (parts[0] === 'params') {
-    //  tempData = _.clone(req.params);
-    //}
-    //else if (parts[0] === 'query') {
-    //  tempData = _.clone(req.query);
-    //}
-    //else {
-    //  tempData = _.clone(req.body);
-    //}
-
-    if (!tempData) {
-      return '';
-    }
-
-    for (var i = 0; i < parts.length; i++) {
-      if (tempData.hasOwnProperty(parts[i])) {
-        tempData = value = tempData[parts[i]];
-      }
-    }
+    // Get the token for replacement.
+    value = _.get(data, args[1]);
 
     // Make sure we only set the strings or numbers.
     switch (typeof value) {
       case 'string':
-        return this.escape(value);
+        return escape(value);
       case 'number':
         return value;
       default:
         return '';
     }
-  }
+  };
+};
+
+module.exports = {
+  escape: escape,
+  getRequestData: getRequestData,
+  queryReplace: queryReplace
 };
