@@ -37,7 +37,7 @@ module.exports = function(util) {
 
     var db = sql.createConnection(configuration);
     return Q.fcall(db.connect.bind(db))
-      .then(function(db1) {
+      .then(function() {
         connection = db;
         return Q();
       })
@@ -69,17 +69,17 @@ module.exports = function(util) {
    * @param query
    * @param result
    */
-  var query = function query(route, query, res, result) {
+  var query = function query(route, query) {
     debug(query);
     return request(query)
       .then(function(response) {
         debug(response.rows);
-        res.result = _.assign({
+        var result = _.assign({
           status: 200,
           data: 'OK'
         }, {rows: response.rows});
 
-        return Q(res);
+        return Q(result);
       })
       .catch(function(err) {
         throw err;

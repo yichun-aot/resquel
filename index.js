@@ -39,51 +39,53 @@ module.exports = function(config) {
     })
     .done();
 
-    // Iterate through each routes.
-    _.each(config.routes, function(route) {
-      router[route.method.toLowerCase()](route.endpoint, function(req, res) {
-        var queryToken = /{{\s+([^}]+)\s+}}/g;
+  // Iterate through each routes.
+  _.each(config.routes, function(route) {
+    router[route.method.toLowerCase()](route.endpoint, function(req, res) {
+      var queryToken = /{{\s+([^}]+)\s+}}/g;
 
-        // Get the query.
-        var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
-        var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
+      // Get the query.
+      var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
+      var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
 
-        var data = util.getRequestData(req);
+      var data = util.getRequestData(req);
 
-        // Get the query to execute.
-        query = query.replace(queryToken, util.queryReplace(data));
-        debug(query);
+      // Get the query to execute.
+      query = query.replace(queryToken, util.queryReplace(data));
+      debug(query);
 
-        // If there is no query then respond with no change.
-        if (!query) {
-          return res.status(204).json({});
-        }
+      // If there is no query then respond with no change.
+      if (!query) {
+        return res.status(204).json({});
+      }
 
-        // Perform a count query.
-        if (count) {
-          count = count.replace(queryToken, util.queryReplace(data));
-          debug(count);
-        }
+      // Perform a count query.
+      if (count) {
+        count = count.replace(queryToken, util.queryReplace(data));
+        debug(count);
+      }
 
-        Q()
-          .then(sql.before(route, req, res))
-          .then(function() {
-            if (count) {
-              return Q.fcall(sql.count, route, count, query, res);
-            }
+      Q()
+        .then(sql.before(route, req, res))
+        .then(function() {
+          if (count) {
+            return Q.fcall(sql.count, route, count, query);
+          }
 
-            return Q.fcall(sql.query, route, query, res);
-          })
-          .then(function(res) {
-            return sql.after(route, req, res)
-          })
-          .catch(function(err) {
-            console.log(err);
-            return res.status(500).send(err.message || err);
-          })
-          .done();
-      });
+          return Q.fcall(sql.query, route, query);
+        })
+        .then(function(result) {
+          res.result = result;
+          return sql.after(route, req, res);
+        })
+        .catch(function(err) {
+          return res.status(500).send(err.message || err);
+
+          debug(err);
+        })
+        .done();
     });
+  });
 
   return router;
 };

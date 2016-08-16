@@ -28,8 +28,8 @@ var getRequestData = function(req) {
   var data = {};
 
   // Start building the core data obj to replace string properties with.
-  if (_.has(req, 'body.request')) {
-    data = _.assign(data, _.get(req, 'body.request'));
+  if (_.has(req, 'body')) {
+    data = _.assign(data, _.get(req, 'body'));
   }
 
   // Let the params have priority over request body data.
