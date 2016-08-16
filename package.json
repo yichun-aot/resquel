@@ -4,7 +4,7 @@
   "description": "Easily convert a SQL database into a REST API using Express.js.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha -t 20000 -b test/mysql.js",
     "lint": "eslint ."
   },
   "author": "",
@@ -21,7 +21,10 @@
     "q": "^1.4.1"
   },
   "devDependencies": {
+    "chance": "^1.0.4",
     "eslint": "^3.2.2",
-    "eslint-config-formio": "^1.1.0"
+    "eslint-config-formio": "^1.1.0",
+    "mocha": "^3.0.2",
+    "supertest": "^2.0.0"
   }
 }
