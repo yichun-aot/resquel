@@ -73,11 +73,11 @@ module.exports = function(util) {
     debug(query);
     return request(query)
       .then(function(response) {
-        debug(response);
+        debug(response.rows);
         res.result = _.assign({
           status: 200,
           data: 'OK'
-        }, response.rows);
+        }, {rows: response.rows});
 
         return Q(res);
       })
