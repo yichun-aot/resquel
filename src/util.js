@@ -1,6 +1,9 @@
 'use strict';
 
 var _ = require('lodash');
+var debug = {
+  getRequestData: require('debug')('resquel:util:getRequestData')
+};
 
 // Escape a string for SQL injection.
 var escape = function(query) {
@@ -34,14 +37,15 @@ var getRequestData = function(req) {
 
   // Let the params have priority over request body data.
   if (_.has(req, 'params')) {
-    data = _.assign(data, _.get(req, 'params'));
+    data = _.assign(data, {params: _.get(req, 'params')});
   }
 
   // Let the query have priority over request body data.
   if (_.has(req, 'query')) {
-    data = _.assign(data, _.get(req, 'query'));
+    data = _.assign(data, {query: _.get(req, 'query')});
   }
 
+  debug.getRequestData(data);
   return data;
 };
 

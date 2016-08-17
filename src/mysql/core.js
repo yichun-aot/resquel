@@ -83,6 +83,8 @@ module.exports = function(util) {
           });
         }
 
+        debug('data:');
+        debug(data);
         var result = _.assign({
           status: 200,
           data: 'OK'
