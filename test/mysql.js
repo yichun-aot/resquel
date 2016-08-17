@@ -131,7 +131,7 @@ describe('resquel tests', function() {
 
           var response = res.body;
           assert.equal(response.rows.length, 1);
-          assert.equal(response.rows[0], 1);
+          assert.deepEqual(response.rows[0], customer);
           done();
         });
     });
@@ -155,7 +155,6 @@ describe('resquel tests', function() {
 
           var response = res.body;
           assert.equal(response.rows.length, 1);
-          assert.equal(response.rows[0], 1);
           assert.notEqual(response.rows[0].firstName, customer.firstName);
           customer = response.rows[0];
           done();
@@ -167,13 +166,15 @@ describe('resquel tests', function() {
     it('delete a customer', function(done) {
       request(app)
         .delete('/customer/' + customer.id)
-        .expect('Content-Type', /text/)
+        .expect('Content-Type', /json/)
         .expect(200)
         .end(function(err, res) {
           if (err) {
             return done(err);
           }
 
+          var response = res.body;
+          assert.deepEqual(response.rows, []);
           customer = null;
           done();
         });

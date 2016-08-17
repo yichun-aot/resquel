@@ -82,6 +82,9 @@ module.exports = function(util) {
             return (item instanceof RowDataPacket);
           });
         }
+        else if (typeof response.rows === 'object' && response.rows instanceof OkPacket) {
+          data = [];
+        }
 
         debug('data:');
         debug(data);
