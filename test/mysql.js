@@ -73,6 +73,7 @@ describe('resquel tests', function() {
     });
   });
 
+  var customer = null;
   describe('create tests', function() {
     it('create a customer', function(done) {
       request(app)
@@ -91,7 +92,105 @@ describe('resquel tests', function() {
             return done(err);
           }
 
-          console.log(res.body);
+          var response = res.body;
+          assert.equal(response.rows.length, 1);
+          customer = response.rows[0];
+          done();
+        });
+    });
+  });
+
+  describe('index tests', function() {
+    it('read the index of all customers', function(done) {
+      request(app)
+        .get('/customer')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          var response = res.body;
+          assert.equal(response.rows.length, 1);
+          done();
+        });
+    });
+  });
+
+  describe('read tests', function() {
+    it('read a customer', function(done) {
+      request(app)
+        .get('/customer/' + customer.id)
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          var response = res.body;
+          assert.equal(response.rows.length, 1);
+          assert.equal(response.rows[0], 1);
+          done();
+        });
+    });
+  });
+
+  describe('update tests', function() {
+    it('update a customer', function(done) {
+      request(app)
+        .put('/customer/' + customer.id)
+        .send({
+          data: {
+            firstName: chance.word()
+          }
+        })
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          var response = res.body;
+          assert.equal(response.rows.length, 1);
+          assert.equal(response.rows[0], 1);
+          assert.notEqual(response.rows[0].firstName, customer.firstName);
+          customer = response.rows[0];
+          done();
+        });
+    });
+  });
+
+  describe('delete tests', function() {
+    it('delete a customer', function(done) {
+      request(app)
+        .delete('/customer/' + customer.id)
+        .expect('Content-Type', /text/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          customer = null;
+          done();
+        });
+    });
+
+    it('no customers exist after deleting them all', function(done) {
+      request(app)
+        .get('/customer')
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          var response = res.body;
+          assert.equal(response.rows.length, 0);
           done();
         });
     });
