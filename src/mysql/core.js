@@ -4,6 +4,8 @@ var Q = require('q');
 var _ = require('lodash');
 var sql = require('mysql');
 var debug = require('debug')('resquel:mysql');
+var OkPacket = require('mysql/lib/protocol/packets/OkPacket');
+var RowDataPacket = require('mysql/lib/protocol/packets/RowDataPacket');
 
 module.exports = function(util) {
   var connection = null;
@@ -74,10 +76,17 @@ module.exports = function(util) {
     return request(query)
       .then(function(response) {
         debug(response.rows);
+        var data = response.rows;
+        if (response.rows instanceof Array && response.rows[0] instanceof OkPacket && response.rows[1] instanceof Array) {
+          data = _.filter(response.rows[1], function(item) {
+            return (item instanceof RowDataPacket);
+          });
+        }
+
         var result = _.assign({
           status: 200,
           data: 'OK'
-        }, {rows: response.rows});
+        }, {rows: data});
 
         return Q(result);
       })
