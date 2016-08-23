@@ -35,6 +35,7 @@ module.exports = function(config) {
       if (err) {
         console.log('Could not connect to database.'); // eslint-disable-line no-console
         console.log(err); // eslint-disable-line no-console
+        throw err;
       }
     })
     .done();

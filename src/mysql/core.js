@@ -37,6 +37,7 @@ module.exports = function(util) {
     // Enable multiple statement commands.
     configuration.multipleStatements = true;
 
+    debug(configuration);
     var db = sql.createConnection(configuration);
     return Q.fcall(db.connect.bind(db))
       .then(function() {
