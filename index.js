@@ -40,8 +40,9 @@ module.exports = function(config) {
     .done();
 
   // Iterate through each routes.
-  _.each(config.routes, function(route) {
-    router[route.method.toLowerCase()](route.endpoint, function(req, res) {
+  config.routes.forEach(function(route) {
+    debug(route.method.toString().toLowerCase());
+    router[route.method.toString().toLowerCase()](route.endpoint, function(req, res) {
       var queryToken = /{{\s+([^}]+)\s+}}/g;
 
       // Get the query.
