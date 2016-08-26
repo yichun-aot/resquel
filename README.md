@@ -1,10 +1,10 @@
 Easily convert your SQL database into a REST API.
 ====================================================
-This is a lightwieght Express.js middleware library that is able to convert SQL databases into a REST API. This library also works
+This is a lightweight Express.js middleware library that is able to convert SQL databases into a REST API. This library also works
 seamlessly with the [Form.io](https://form.io) platform where you can build Angular.js and React.js applications on top of your SQL database. Please go
 to https://form.io to learn more.
 
-**For now, this library only supports Microsoft SQL Server, but we will be adding new databases in the future.**
+**For now, this library only supports Microsoft SQL Server and MySQL.**
 
 How it works
 --------------
