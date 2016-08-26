@@ -18,7 +18,7 @@ module.exports = function(config) {
   router.use(methodOverride('X-HTTP-Method-Override'));
 
   // Add Basic authentication to our API.
-  if (config.auth) {
+  if (config.auth && config.auth.username !== undefined && config.auth.password !== undefined) {
     var basicAuth = require('basic-auth-connect');
     router.use(basicAuth(config.auth.username, config.auth.password));
   }
