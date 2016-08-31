@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha -t 20000 -b test/mysql.js",
+    "mssql": "mocha -t 20000 -b test/mssql.js",
     "lint": "eslint ."
   },
   "author": "",
