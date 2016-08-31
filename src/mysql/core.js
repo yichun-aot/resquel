@@ -11,6 +11,7 @@ module.exports = function(util) {
   var connection = null;
 
   /**
+   * Connect to the Database.
    *
    * @param config
    *   The database settings, from the config file.
@@ -49,6 +50,14 @@ module.exports = function(util) {
       });
   };
 
+  /**
+   * Issue a SQL request to the connection.
+   *
+   * @param {string} query
+   *   The SQL query to execute.
+   *
+   * @returns {*|promise}
+   */
   var request = function request(query) {
     var q = Q.defer();
 
@@ -69,8 +78,9 @@ module.exports = function(util) {
   /**
    * Perform the query.
    *
-   * @param query
-   * @param result
+   * @param {string} route
+   * @param {string} query
+   *   The SQL query to execute.
    */
   var query = function query(route, query) {
     debug(query);
@@ -105,6 +115,18 @@ module.exports = function(util) {
       });
   };
 
+  /**
+   * Check if the current route has a before fn defined, if so, execute it and proceed.
+   *
+   * @param {object} route
+   *   The route object.
+   * @param {object} req
+   *   The express request object.
+   * @param {object} res
+   *   The express response object.
+   *
+   * @returns {Promise}
+   */
   var before = function before(route, req, res) {
     debug('Before:');
     debug(route);
@@ -124,6 +146,18 @@ module.exports = function(util) {
     return Q();
   };
 
+  /**
+   * Check if the current route has a after fn defined, if so, execute it and proceed.
+   *
+   * @param {object} route
+   *   The route object.
+   * @param {object} req
+   *   The express request object.
+   * @param {object} res
+   *   The express response object.
+   *
+   * @returns {Promise}
+   */
   var after = function after(route, req, res) {
     debug('After:');
     debug(route);
