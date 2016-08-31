@@ -1,5 +1,6 @@
 'use strict';
 
+var Q = require('q');
 var _ = require('lodash');
 var debug = {
   getRequestData: require('debug')('resquel:util:getRequestData')
@@ -73,8 +74,67 @@ var queryReplace = function(data) {
   };
 };
 
+/**
+ * Check if the current route has a before fn defined, if so, execute it and proceed.
+ *
+ * @param {object} route
+ *   The route object.
+ * @param {object} req
+ *   The express request object.
+ * @param {object} res
+ *   The express response object.
+ *
+ * @returns {Promise}
+ */
+var before = function before(route, req, res) {
+  if (!route.hasOwnProperty('before') || (typeof route.before !== 'function')) {
+    return Q();
+  }
+
+  // Ensure they can hook into the before handler.
+  route.before(req, res, function(err) {
+    if (err) {
+      throw err;
+    }
+
+    return Q();
+  });
+};
+
+/**
+ * Check if the current route has a after fn defined, if so, execute it and proceed.
+ *
+ * @param {object} route
+ *   The route object.
+ * @param {object} req
+ *   The express request object.
+ * @param {object} res
+ *   The express response object.
+ *
+ * @returns {Promise}
+ */
+var after = function after(route, req, res) {
+  if (!route.hasOwnProperty('after') || (typeof route.after !== 'function')) {
+    // Send the result.
+    return res.status(res.result.status).send(res.result);
+  }
+
+  // Ensure they can hook into the after handler.
+  route.after(req, res, function(err, result) {
+    result = result || res.result;
+    if (err) {
+      throw err;
+    }
+
+    // Send the result.
+    return res.status(result.status).send(result);
+  });
+};
+
 module.exports = {
   escape: escape,
   getRequestData: getRequestData,
-  queryReplace: queryReplace
+  queryReplace: queryReplace,
+  before: before,
+  after: after
 };

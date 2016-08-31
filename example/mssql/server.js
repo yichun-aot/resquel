@@ -13,4 +13,4 @@ app.use(resquel(config));
 
 // Listen for requests.
 app.listen(config.port);
-console.log('Listening to port ' + config.port); // eslint-disable-line no-console
+console.log('Listening to port ' + config.port);

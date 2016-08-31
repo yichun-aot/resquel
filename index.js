@@ -33,8 +33,8 @@ module.exports = function(config) {
     .connect(config.db)
     .catch(function(err) {
       if (err) {
-        console.log('Could not connect to database.'); // eslint-disable-line no-console
-        console.log(err); // eslint-disable-line no-console
+        console.log('Could not connect to database.');
+        console.log(err);
         throw err;
       }
     })
@@ -67,8 +67,16 @@ module.exports = function(config) {
         debug(count);
       }
 
+      // Allow each sql type to customize the before/after handlers if they need to.
+      var before = sql.hasOwnProperty('before')
+        ? sql.before
+        : util.before;
+      var after = sql.hasOwnProperty('after')
+        ? sql.after
+        : util.after;
+
       Q()
-        .then(sql.before(route, req, res))
+        .then(before(route, req, res))
         .then(function() {
           if (count) {
             return Q.fcall(sql.count, route, count, query);
@@ -78,7 +86,7 @@ module.exports = function(config) {
         })
         .then(function(result) {
           res.result = result;
-          return sql.after(route, req, res);
+          return after(route, req, res);
         })
         .catch(function(err) {
           debug(err);
