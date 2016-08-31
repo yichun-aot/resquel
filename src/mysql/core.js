@@ -78,11 +78,10 @@ module.exports = function(util) {
   /**
    * Perform the query.
    *
-   * @param {string} route
    * @param {string} query
    *   The SQL query to execute.
    */
-  var query = function query(route, query) {
+  var query = function query(query) {
     debug(query);
     return request(query)
       .then(function(response) {

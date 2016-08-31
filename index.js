@@ -79,10 +79,10 @@ module.exports = function(config) {
         .then(before(route, req, res))
         .then(function() {
           if (count) {
-            return Q.fcall(sql.count, route, count, query);
+            return Q.fcall(sql.count, count, query);
           }
 
-          return Q.fcall(sql.query, route, query);
+          return Q.fcall(sql.query, query);
         })
         .then(function(result) {
           res.result = result;
