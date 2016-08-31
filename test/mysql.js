@@ -20,6 +20,38 @@ var app = express();
 var sql = null;
 
 describe('resquel tests', function() {
+  var called = {
+    'POST': [],
+    'GET': [],
+    'PUT': [],
+    'DELETE': [],
+    'INDEX': []
+  };
+  var call = function(item, handler) {
+    item.push(handler);
+  };
+
+  describe('bootstrap routes', function() {
+    it('add before/after route functions', function(done) {
+      config.routes.forEach(function(route) {
+        var type = route.method.toString().toUpperCase();
+        if (type === 'GET' && (route.endpoint.indexOf('/:') === -1)) {
+          type = 'INDEX'
+        }
+
+        route.before = function(req, res, next) {
+          called[type].push('before');
+          next();
+        };
+        route.after = function(req, res, next) {
+          called[type].push('after');
+          next();
+        }
+      });
+      done();
+    });
+  });
+
   describe('bootstrap environment', function() {
     before(function() {
       sql = require('../src/mysql/core')(util);
@@ -99,6 +131,20 @@ describe('resquel tests', function() {
           done();
         });
     });
+
+    it('the before handler was called first for the route', function(done) {
+      assert(called.POST instanceof Array);
+      assert(called.POST.length >= 1);
+      assert(called.POST[0] === 'before');
+      done();
+    });
+
+    it('the after handler was called second for the route', function(done) {
+      assert(called.POST instanceof Array);
+      assert(called.POST.length >= 2);
+      assert(called.POST[1] === 'after');
+      done();
+    });
   });
 
   describe('index tests', function() {
@@ -116,6 +162,20 @@ describe('resquel tests', function() {
           assert.equal(response.rows.length, 1);
           done();
         });
+    });
+
+    it('the before handler was called first for the route', function(done) {
+      assert(called.INDEX instanceof Array);
+      assert(called.INDEX.length >= 1);
+      assert(called.INDEX[0] === 'before');
+      done();
+    });
+
+    it('the after handler was called second for the route', function(done) {
+      assert(called.INDEX instanceof Array);
+      assert(called.INDEX.length >= 2);
+      assert(called.INDEX[1] === 'after');
+      done();
     });
   });
 
@@ -135,6 +195,20 @@ describe('resquel tests', function() {
           assert.deepEqual(response.rows[0], customer);
           done();
         });
+    });
+
+    it('the before handler was called first for the route', function(done) {
+      assert(called.GET instanceof Array);
+      assert(called.GET.length >= 1);
+      assert(called.GET[0] === 'before');
+      done();
+    });
+
+    it('the after handler was called second for the route', function(done) {
+      assert(called.GET instanceof Array);
+      assert(called.GET.length >= 2);
+      assert(called.GET[1] === 'after');
+      done();
     });
   });
 
@@ -161,6 +235,20 @@ describe('resquel tests', function() {
           done();
         });
     });
+
+    it('the before handler was called first for the route', function(done) {
+      assert(called.PUT instanceof Array);
+      assert(called.PUT.length >= 1);
+      assert(called.PUT[0] === 'before');
+      done();
+    });
+
+    it('the after handler was called second for the route', function(done) {
+      assert(called.PUT instanceof Array);
+      assert(called.PUT.length >= 2);
+      assert(called.PUT[1] === 'after');
+      done();
+    });
   });
 
   describe('delete tests', function() {
@@ -179,6 +267,20 @@ describe('resquel tests', function() {
           customer = null;
           done();
         });
+    });
+
+    it('the before handler was called first for the route', function(done) {
+      assert(called.DELETE instanceof Array);
+      assert(called.DELETE.length >= 1);
+      assert(called.DELETE[0] === 'before');
+      done();
+    });
+
+    it('the after handler was called second for the route', function(done) {
+      assert(called.DELETE instanceof Array);
+      assert(called.DELETE.length >= 2);
+      assert(called.DELETE[1] === 'after');
+      done();
     });
 
     it('no customers exist after deleting them all', function(done) {
