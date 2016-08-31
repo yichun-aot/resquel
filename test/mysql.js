@@ -1,10 +1,11 @@
+/* eslint-env node, mocha */
 'use strict';
 
 var request = require('supertest');
 var assert = require('assert');
 var express = require('express');
 var util = require('../src/util');
-var chance = (new require('chance'))();
+var chance = (new require('chance'))(); // eslint-disable-line new-cap
 var config = {
   type: 'mysql',
   db: {

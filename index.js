@@ -81,9 +81,8 @@ module.exports = function(config) {
           return sql.after(route, req, res);
         })
         .catch(function(err) {
-          return res.status(500).send(err.message || err);
-
           debug(err);
+          return res.status(500).send(err.message || err);
         })
         .done();
     });

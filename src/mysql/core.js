@@ -78,7 +78,11 @@ module.exports = function(util) {
       .then(function(response) {
         debug(response.rows);
         var data = response.rows;
-        if (response.rows instanceof Array && response.rows[0] instanceof OkPacket && response.rows[1] instanceof Array) {
+        if (
+          response.rows instanceof Array
+          && response.rows[0] instanceof OkPacket
+          && response.rows[1] instanceof Array
+        ) {
           data = _.filter(response.rows[1], function(item) {
             return (item instanceof RowDataPacket);
           });

@@ -14,7 +14,7 @@ module.exports = function(util) {
      *   The database settings, from the config file.
      */
     connect: function(config) {
-      var db = sql.Connection(config);
+      var db = sql.Connection(config); // eslint-disable-line new-cap
 
       return Q.fcall(db.connect)
         .then(function() {
@@ -70,7 +70,7 @@ module.exports = function(util) {
     count: function(route, count, query, res) {
       return this.request(count)
         .then(function(recordset) {
-          return this.query(route, query, res, {total: recordset[0].total})
+          return this.query(route, query, res, {total: recordset[0].total});
         })
         .catch(function(err) {
           throw err;
