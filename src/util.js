@@ -6,7 +6,15 @@ var debug = {
   getRequestData: require('debug')('resquel:util:getRequestData')
 };
 
-// Escape a string for SQL injection.
+/**
+ * Escape a string for SQL injection.
+ *
+ * @param {string} query
+ *   The SQL query to sanitize.
+ *
+ * @returns {string}
+ *   The escaped query.
+ */
 var escape = function(query) {
   return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(s) { // eslint-disable-line no-control-regex
     switch (s) {
@@ -28,6 +36,15 @@ var escape = function(query) {
   });
 };
 
+/**
+ * Get the input data from the given request.
+ *
+ * @param {object} req
+ *   The express request object.
+ *
+ * @returns {object}
+ *   The data from the incoming request.
+ */
 var getRequestData = function(req) {
   var data = {};
 
@@ -50,6 +67,15 @@ var getRequestData = function(req) {
   return data;
 };
 
+/**
+ * Create anonymous function to sanitize user input for sql query injection.
+ *
+ * @param {object} data
+ *   The request data object.
+ *
+ * @returns {Function}
+ *   The function to replace the data in the query.
+ */
 var queryReplace = function(data) {
   return function() {
     var value = '';
