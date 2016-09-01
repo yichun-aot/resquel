@@ -2,7 +2,7 @@
 
 module.exports = function(util) {
   return {
-    mysql: require('./mysql/core')(util),
-    mssql: require('./mssql/core')(util)
+    mysql: require('./mysql')(util),
+    mssql: require('./mssql')(util)
   };
 };

@@ -27,9 +27,6 @@ describe('resquel tests', function() {
     'DELETE': [],
     'INDEX': []
   };
-  var call = function(item, handler) {
-    item.push(handler);
-  };
 
   describe('bootstrap routes', function() {
     it('add before/after route functions', function(done) {
@@ -54,7 +51,7 @@ describe('resquel tests', function() {
 
   describe('bootstrap environment', function() {
     before(function() {
-      sql = require('../src/mysql/core')(util);
+      sql = require('../src/mysql')(util);
     });
 
     after(function() {
@@ -96,13 +93,13 @@ describe('resquel tests', function() {
         'PRIMARY KEY (`id`)' +
         ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;'
       )
-        .then(function() {
-          return done();
-        })
-        .catch(function(err) {
-          return done(err);
-        })
-        .done();
+      .then(function() {
+        return done();
+      })
+      .catch(function(err) {
+        return done(err);
+      })
+      .done();
     });
   });
 
