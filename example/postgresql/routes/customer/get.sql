@@ -1,0 +1,1 @@
+SELECT * FROM customers WHERE id={{ params.customerId }};

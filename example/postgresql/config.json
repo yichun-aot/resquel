@@ -1,0 +1,10 @@
+{
+  "port": 9999,
+  "type": "postgresql",
+  "db": {
+    "server": "localhost",
+    "user": "postgres",
+    "database": "formio",
+    "options": {}
+  }
+}
