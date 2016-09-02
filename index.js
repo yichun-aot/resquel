@@ -51,6 +51,13 @@ module.exports = function(config) {
 
       var data = util.getRequestData(req);
 
+      // Include any extra information for specific storage methods.
+      var extra = {
+        query: {
+          original: _.clone(query)
+        }
+      };
+
       // Get the query to execute.
       query = query.replace(queryToken, util.queryReplace(data));
       debug(query);
@@ -78,10 +85,10 @@ module.exports = function(config) {
         .then(before(route, req, res))
         .then(function() {
           if (count) {
-            return Q.fcall(sql.count, count, query);
+            return Q.fcall(sql.count, count, query, extra);
           }
 
-          return Q.fcall(sql.query, query);
+          return Q.fcall(sql.query, query, extra);
         })
         .then(function(result) {
           res.result = result;

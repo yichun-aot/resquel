@@ -57,9 +57,9 @@ module.exports = function(util) {
    *
    * @returns {*|promise}
    */
-  var request = function request(query, values) {
+  var request = function request(query) {
     debug(query);
-    return Q.ninvoke(connection, 'query', query, values);
+    return Q.ninvoke(connection, 'query', query);
   };
 
   /**
@@ -68,34 +68,30 @@ module.exports = function(util) {
    * @param {string} query
    *   The SQL query to execute.
    */
-  var query = function query(query, values) {
+  var query = function query(query, extra) {
     debug(query);
-    debug(values);
-    return request(query, values)
+    debug(extra);
+
+    return request(query)
       .then(function(response) {
         debug(response);
-        //var data = response.rows;
-        //if (
-        //  response.rows instanceof Array
-        //  && response.rows[0] instanceof OkPacket
-        //  && response.rows[1] instanceof Array
-        //) {
-        //  data = _.filter(response.rows[1], function(item) {
-        //    return (item instanceof RowDataPacket);
-        //  });
-        //}
-        //else if (typeof response.rows === 'object' && response.rows instanceof OkPacket) {
-        //  data = [];
-        //}
-        //
-        //debug('data:');
-        //debug(data);
-        //var result = _.assign({
-        //  status: 200,
-        //  data: 'OK'
-        //}, {rows: data});
-        //
-        //return Q(result);
+        var data;
+        if (
+          response.hasOwnProperty('rows')
+          && response.rows instanceof Array
+        ) {
+          data = response.rows;
+        }
+        else {
+          data = [];
+        }
+
+        var result = _.assign({
+          status: 200,
+          data: 'OK'
+        }, {rows: data});
+
+        return result;
       })
       .catch(function(err) {
         throw err;
