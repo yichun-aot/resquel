@@ -37,8 +37,7 @@ module.exports = function(config) {
         console.log(err);
         throw err;
       }
-    })
-    .done();
+    });
 
   // Iterate through each routes.
   config.routes.forEach(function(route) {

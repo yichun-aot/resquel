@@ -10,9 +10,8 @@ var config = {
   type: 'mssql',
   db: {
     server: 'mssql.localhost',
-    user: 'root',
-    password: 'root',
-    options: {}
+    user: 'resquel',
+    password: 'resquel'
   },
   routes: require('../example/mssql/routes/index.js')
 };
@@ -56,7 +55,6 @@ describe('resquel tests', function() {
     });
 
     after(function() {
-      config.db.database = 'test';
       app.use(require('../index')(config));
     });
 
@@ -67,30 +65,41 @@ describe('resquel tests', function() {
         })
         .catch(function(err) {
           return done(err);
-        })
+        });
     });
 
     it('clear the test db', function(done) {
-      sql.request('DROP DATABASE IF EXISTS `test`')
+      sql.request(
+        'USE master;' +
+        'DROP DATABASE test;'
+      )
+      .then(function() {
+        return done();
+      })
+      .catch(function() {
+        return done();
+      })
+    });
+
+    it('create the test db', function(done) {
+      sql.request('CREATE DATABASE test;')
         .then(function() {
           return done();
         })
         .catch(function(err) {
           return done(err);
-        })
+        });
     });
 
-    it('create the test db', function(done) {
+    it('create the test table', function(done) {
       sql.request(
-        'CREATE DATABASE IF NOT EXISTS `test`;' +
-        'USE `test`;' +
-        'CREATE TABLE `customers` (' +
-        '`id` int(16) unsigned NOT NULL AUTO_INCREMENT,' +
-        '`firstName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-        '`lastName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-        '`email` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
-        'PRIMARY KEY (`id`)' +
-        ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;'
+        'USE test;' +
+        'CREATE TABLE customers (' +
+        'id int NOT NULL IDENTITY(1,1) PRIMARY KEY,' +
+        'firstName varchar(256) DEFAULT NULL,' +
+        'lastName varchar(256) DEFAULT NULL,' +
+        'email varchar(256) DEFAULT NULL' +
+        ');'
       )
       .then(function() {
         return done();
