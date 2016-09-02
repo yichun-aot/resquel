@@ -40,7 +40,7 @@ module.exports = function(util) {
 
     debug(configuration);
     var db = sql.createConnection(configuration);
-    return Q.fcall(db.connect.bind(db))
+    return Q.ninvoke(db, 'connect')
       .then(function() {
         connection = db;
         return Q();
@@ -107,7 +107,7 @@ module.exports = function(util) {
           data: 'OK'
         }, {rows: data});
 
-        return Q(result);
+        return result;
       })
       .catch(function(err) {
         throw err;
