@@ -11,6 +11,7 @@ var config = {
   db: {
     server: 'mssql.localhost',
     user: 'root',
+    password: 'root',
     options: {}
   },
   routes: require('../example/mssql/routes/index.js')
@@ -67,7 +68,6 @@ describe('resquel tests', function() {
         .catch(function(err) {
           return done(err);
         })
-        .done();
     });
 
     it('clear the test db', function(done) {
@@ -78,7 +78,6 @@ describe('resquel tests', function() {
         .catch(function(err) {
           return done(err);
         })
-        .done();
     });
 
     it('create the test db', function(done) {

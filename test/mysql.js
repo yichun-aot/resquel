@@ -67,7 +67,6 @@ describe('resquel tests', function() {
         .catch(function(err) {
           return done(err);
         })
-        .done();
     });
 
     it('clear the test db', function(done) {

@@ -15,12 +15,9 @@ module.exports = function(util) {
    *   The database settings, from the config file.
    */
   var connect = function connect(config) {
-    var db = sql.Connection(config); // eslint-disable-line new-cap
-
-    return Q.fcall(db.connect)
-      .then(function() {
-        connection = db;
-        return Q();
+    return (new sql.Connection(config)).connect()
+      .then(function(con) {
+        connection = con;
       })
       .catch(function(err) {
         throw err;
@@ -34,7 +31,7 @@ module.exports = function(util) {
    *   The SQL query to execute.
    */
   var request = function request(query) {
-    return Q.fcall((new sql.Request(connection)).query, query);
+    return Q.ninvoke((new sql.Request(connection)), 'query', query);
   };
 
   /**
