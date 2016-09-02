@@ -11,8 +11,8 @@ var config = {
   type: 'postgresql',
   db: {
     server: 'localhost',
-    user: 'root',
-    password: 'root',
+    user: 'test',
+    password: 'test',
     database: 'test'
   },
   routes: require('../example/postgresql/routes/index.js')
@@ -62,6 +62,9 @@ describe('resquel tests', function() {
 
     it('connect to the db', function(done) {
       var temp = _.cloneDeep(config.db);
+      // Login as the root user.
+      temp.user = 'postgres';
+      temp.password = 'postgres';
       temp.database = 'postgres';
       sql.connect(temp)
         .then(function() {
@@ -73,8 +76,18 @@ describe('resquel tests', function() {
         .done();
     });
 
+    it('use plsql', function(done) {
+      sql.request('CREATE OR REPLACE LANGUAGE plpgsql;')
+        .then(function() {
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+
     it('clear the test db', function(done) {
-      sql.request('DROP DATABASE IF EXISTS "test"')
+      sql.request('DROP DATABASE IF EXISTS test')
         .then(function() {
           return done();
         })
@@ -84,17 +97,36 @@ describe('resquel tests', function() {
         .done();
     });
 
+    it('clear the test user', function(done) {
+      sql.request('DROP USER test')
+        .then(function() {
+          return done();
+        })
+        .catch(function() {
+          return done();
+        })
+        .done();
+    });
+
+    it('create the test user', function(done) {
+      sql.request('CREATE USER test WITH PASSWORD \'test\'')
+        .then(function() {
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        });
+    });
+
     it('create the test db', function(done) {
-      sql.request(
-        'CREATE DATABASE "test"'
-      )
-      .then(function() {
-        return done();
-      })
-      .catch(function(err) {
-        return done(err);
-      })
-      .done();
+      sql.request('CREATE DATABASE test WITH OWNER \'test\'')
+        .then(function() {
+          return done();
+        })
+        .catch(function(err) {
+          return done(err);
+        })
+        .done();
     });
 
     it('connect to the test db', function(done) {
@@ -110,23 +142,16 @@ describe('resquel tests', function() {
 
     it('create the test table', function(done) {
       sql.request(
-        'CREATE TABLE "customers"' +
+        'CREATE TABLE customers' +
         '(' +
-          'id integer NOT NULL DEFAULT nextval(\'customers_id_seq\'::regclass),' +
+          'id serial,' +
           '"firstName" text,' +
           '"lastName" text,' +
-          'email text' +
-
+          'email text,' +
+          'PRIMARY KEY ("id"),' +
+          'UNIQUE ("id")' +
         ')' +
-        'WITH (' +
-          'OIDS=FALSE' +
-        ')'
-        //'CREATE TABLE "customers" (' +
-        //'"id" SERIAL PRIMARY KEY,' +
-        //'"firstName" varchar(256) DEFAULT NULL,' +
-        //'"lastName" varchar(256) DEFAULT NULL,' +
-        //'"email" varchar(256) DEFAULT NULL' +
-        //')'
+        'TABLESPACE "pg_default";'
       )
       .then(function() {
         return done();
@@ -134,7 +159,6 @@ describe('resquel tests', function() {
       .catch(function(err) {
         return done(err);
       })
-      .done();
     });
   });
 

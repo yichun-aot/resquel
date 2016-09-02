@@ -58,6 +58,7 @@ module.exports = function(util) {
    * @returns {*|promise}
    */
   var request = function request(query, values) {
+    debug(query);
     return Q.ninvoke(connection, 'query', query, values);
   };
 
