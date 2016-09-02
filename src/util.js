@@ -118,12 +118,12 @@ var before = function before(route, req, res) {
   }
 
   // Ensure they can hook into the before handler.
-  route.before(req, res, function(err) {
+  route.before(req, res, function(err, result) {
     if (err) {
       throw err;
     }
 
-    return Q();
+    return result;
   });
 };
 
@@ -142,7 +142,8 @@ var before = function before(route, req, res) {
 var after = function after(route, req, res) {
   if (!route.hasOwnProperty('after') || (typeof route.after !== 'function')) {
     // Send the result.
-    return res.status(res.result.status).send(res.result);
+    res.status(res.result.status).send(res.result);
+    return;
   }
 
   // Ensure they can hook into the after handler.
@@ -153,7 +154,8 @@ var after = function after(route, req, res) {
     }
 
     // Send the result.
-    return res.status(result.status).send(result);
+    res.status(result.status).send(result);
+    return result;
   });
 };
 

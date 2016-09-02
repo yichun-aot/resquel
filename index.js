@@ -31,63 +31,6 @@ module.exports = function(config) {
 
   sql
     .connect(config.db)
-    .then(function(con) {
-      // Iterate through each routes.
-      config.routes.forEach(function(route) {
-        debug(route.method.toString().toLowerCase());
-        router[route.method.toString().toLowerCase()](route.endpoint, function(req, res) {
-          var queryToken = /{{\s+([^}]+)\s+}}/g;
-
-          // Get the query.
-          var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
-          var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
-
-          var data = util.getRequestData(req);
-
-          // Get the query to execute.
-          query = query.replace(queryToken, util.queryReplace(data));
-          debug(query);
-
-          // If there is no query then respond with no change.
-          if (!query) {
-            return res.status(204).json({});
-          }
-
-          // Perform a count query.
-          if (count) {
-            count = count.replace(queryToken, util.queryReplace(data));
-            debug(count);
-          }
-
-          // Allow each sql type to customize the before/after handlers if they need to.
-          var before = sql.hasOwnProperty('before')
-            ? sql.before
-            : util.before;
-          var after = sql.hasOwnProperty('after')
-            ? sql.after
-            : util.after;
-
-          Q()
-            .then(before(route, req, res))
-            .then(function() {
-              if (count) {
-                return Q.fcall(sql.count, count, query);
-              }
-
-              return Q.fcall(sql.query, query);
-            })
-            .then(function(result) {
-              res.result = result;
-              return after(route, req, res);
-            })
-            .catch(function(err) {
-              debug(err);
-              return res.status(500).send(err.message || err);
-            })
-            .done();
-        });
-      });
-    })
     .catch(function(err) {
       if (err) {
         console.log('Could not connect to database.');
@@ -95,6 +38,62 @@ module.exports = function(config) {
         throw err;
       }
     });
+
+  // Iterate through each routes.
+  config.routes.forEach(function(route) {
+    debug(route.method.toString().toLowerCase());
+    router[route.method.toString().toLowerCase()](route.endpoint, function(req, res) {
+      var queryToken = /{{\s+([^}]+)\s+}}/g;
+
+      // Get the query.
+      var query = (typeof route.query === 'function') ? route.query(req, res) : route.query;
+      var count = (typeof route.count === 'function') ? route.count(req, res) : route.count;
+
+      var data = util.getRequestData(req);
+
+      // Get the query to execute.
+      query = query.replace(queryToken, util.queryReplace(data));
+      debug(query);
+
+      // If there is no query then respond with no change.
+      if (!query) {
+        return res.status(204).json({});
+      }
+
+      // Perform a count query.
+      if (count) {
+        count = count.replace(queryToken, util.queryReplace(data));
+        debug(count);
+      }
+
+      // Allow each sql type to customize the before/after handlers if they need to.
+      var before = sql.hasOwnProperty('before')
+        ? sql.before
+        : util.before;
+      var after = sql.hasOwnProperty('after')
+        ? sql.after
+        : util.after;
+
+      Q()
+        .then(before(route, req, res))
+        .then(function() {
+          if (count) {
+            return Q.fcall(sql.count, count, query);
+          }
+
+          return Q.fcall(sql.query, query);
+        })
+        .then(function(result) {
+          res.result = result;
+          return after(route, req, res);
+        })
+        .catch(function(err) {
+          debug(err);
+          return res.status(500).send(err.message || err);
+        })
+        .done();
+    });
+  });
 
   return router;
 };

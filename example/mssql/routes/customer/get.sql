@@ -1,1 +1,1 @@
-SELECT * FROM customers WHERE id={{ params.customerId }};
+SELECT * FROM test.dbo.customers WHERE id={{ params.customerId }};

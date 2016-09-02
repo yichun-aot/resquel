@@ -6,17 +6,21 @@ var assert = require('assert');
 var express = require('express');
 var util = require('../src/util');
 var chance = (new require('chance'))(); // eslint-disable-line new-cap
+var _ = require('lodash');
 var config = {
   type: 'mssql',
   db: {
     server: 'mssql.localhost',
     user: 'resquel',
-    password: 'resquel'
+    password: 'resquel',
+    requestTimeout: 30000
   },
   routes: require('../example/mssql/routes/index.js')
 };
 
 var app = express();
+app.use(require('../index')(config));
+
 var sql = null;
 
 describe('resquel tests', function() {
@@ -55,11 +59,12 @@ describe('resquel tests', function() {
     });
 
     after(function() {
+      config.db.database = 'test';
       app.use(require('../index')(config));
     });
 
     it('connect to the db', function(done) {
-      sql.connect(config.db)
+      sql.connect(_.cloneDeep(config.db))
         .then(function() {
           return done();
         })
@@ -76,9 +81,9 @@ describe('resquel tests', function() {
       .then(function() {
         return done();
       })
-      .catch(function() {
+      .catch(function(err) {
         return done();
-      })
+      });
     });
 
     it('create the test db', function(done) {

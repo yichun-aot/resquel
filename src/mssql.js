@@ -15,9 +15,13 @@ module.exports = function(util) {
    *   The database settings, from the config file.
    */
   var connect = function connect(config) {
+    // Double the default timeout
+    config.requestTimeout = 30000;
+
     return (new sql.Connection(config)).connect()
       .then(function(con) {
         connection = con;
+        return con;
       })
       .catch(function(err) {
         throw err;
@@ -43,15 +47,25 @@ module.exports = function(util) {
   var query = function query(query, count) {
     debug(query);
     return request(query)
-      .then(function(recordset) {
-        debug(recordset);
-        var data = recordset || [];
+      .then(function(response) {
+        debug(response);
+        var data;
+        if (
+          response.length >= 1
+        && response[0] instanceof Array // get the results
+        ) {
+          data = response[0];
+        }
+        else {
+          data = [];
+        }
+
         var result = _.assign({
           status: 200,
           data: 'OK'
         }, {rows: data});
 
-        return Q(result);
+        return result;
       })
       .catch(function(err) {
         throw err;

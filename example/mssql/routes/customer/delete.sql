@@ -1,1 +1,1 @@
-DELETE FROM customers WHERE id={{ params.customerId }};
+DELETE FROM test.dbo.customers WHERE id={{ params.customerId }};
