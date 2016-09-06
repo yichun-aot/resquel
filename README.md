@@ -4,7 +4,7 @@ This is a lightweight Express.js middleware library that is able to convert SQL 
 seamlessly with the [Form.io](https://form.io) platform where you can build Angular.js and React.js applications on top of your SQL database. Please go
 to https://form.io to learn more.
 
-**For now, this library only supports Microsoft SQL Server and MySQL.**
+**This library currently supports Microsoft SQL Server, MySQL, and PostgreSQL.**
 
 How it works
 --------------
