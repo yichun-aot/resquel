@@ -1,0 +1,12 @@
+{
+  "root": true,
+  "extends": "eslint-config-formio",
+  "env": {
+    "node": true
+  },
+  "rules": {
+    "no-unused-vars": 0,
+    "no-undef": 0,
+    "no-console": 0
+  }
+}

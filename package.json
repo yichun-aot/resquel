@@ -4,17 +4,30 @@
   "description": "Easily convert a SQL database into a REST API using Express.js.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -t 20000 -b test/mysql.js",
+    "mssql": "mocha -t 20000 -b test/mssql.js",
+    "postgresql": "mocha -t 20000 -b test/postgresql.js",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "basic-auth-connect": "^1.0.0",
     "body-parser": "^1.15.0",
+    "debug": "^2.2.0",
     "express": "^4.13.4",
     "lodash": "^4.11.1",
     "method-override": "^2.3.5",
     "mssql": "^3.1.1",
+    "mysql": "^2.11.1",
+    "pg": "^6.1.0",
     "q": "^1.4.1"
+  },
+  "devDependencies": {
+    "chance": "^1.0.4",
+    "eslint": "^3.2.2",
+    "eslint-config-formio": "^1.1.0",
+    "mocha": "^3.0.2",
+    "supertest": "^2.0.0"
   }
 }

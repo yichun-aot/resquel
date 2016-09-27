@@ -1,0 +1,2 @@
+UPDATE test.dbo.customers SET firstName='{{ data.firstName }}', lastName='{{ data.lastName }}', email='{{ data.email }}' WHERE id={{ params.customerId }};
+SELECT * FROM test.dbo.customers WHERE id={{ params.customerId }};
