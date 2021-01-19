@@ -1,6 +1,6 @@
 {
   "name": "resquel",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Easily convert a SQL database into a REST API using Express.js.",
   "main": "src/index.ts",
   "scripts": {
