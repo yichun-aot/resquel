@@ -57,9 +57,9 @@ module.exports = function(util) {
    *
    * @returns {*|promise}
    */
-  var request = function request(query) {
-    debug(query);
-    return Q.ninvoke(connection, 'query', query);
+  var request = function request(queryString) {
+    debug(queryString);
+    return Q.ninvoke(connection, 'query', queryString);
   };
 
   /**
@@ -68,11 +68,11 @@ module.exports = function(util) {
    * @param {string} query
    *   The SQL query to execute.
    */
-  var query = function query(query, extra) {
-    debug(query);
+  var query = function query(queryString, extra) {
+    debug(queryString);
     debug(extra);
 
-    return request(query)
+    return request(queryString)
       .then(function(response) {
         debug(response);
         var data;

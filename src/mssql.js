@@ -34,8 +34,8 @@ module.exports = function(util) {
    * @param {string} query
    *   The SQL query to execute.
    */
-  var request = function request(query) {
-    return Q.ninvoke((new sql.Request(connection)), 'query', query);
+  var request = function request(queryString) {
+    return Q.ninvoke((new sql.Request(connection)), 'query', queryString);
   };
 
   /**
@@ -44,10 +44,10 @@ module.exports = function(util) {
    * @param {string} query
    *   The SQL query to execute.
    */
-  var query = function query(query, count) {
-    debug(query);
-    return request(query)
-      .then(function(response) {
+  var query = function query(queryString, count) {
+    debug(queryString);
+    return request(queryString)
+      .then(function (response) {
         debug(response);
         var data;
         if (
@@ -80,10 +80,12 @@ module.exports = function(util) {
    * @param {string} query
    *   Te SQL query to execute.
    */
-  var count = function count(count, query) {
+  var count = function count(count, queryString) {
     return request(count)
       .then(function(recordset) {
-        return query(query, {total: recordset[0].total});
+        return query(queryString, {
+          total: recordset[0].total
+        });
       })
       .catch(function(err) {
         throw err;

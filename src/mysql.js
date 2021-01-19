@@ -58,10 +58,10 @@ module.exports = function(util) {
    *
    * @returns {*|promise}
    */
-  var request = function request(query) {
+  var request = function request(queryString) {
     var q = Q.defer();
 
-    connection.query(query, function(err, rows, fields) {
+    connection.query(queryString, function (err, rows, fields) {
       if (err) {
         return q.reject(err);
       }
@@ -81,9 +81,9 @@ module.exports = function(util) {
    * @param {string} query
    *   The SQL query to execute.
    */
-  var query = function query(query) {
-    debug(query);
-    return request(query)
+  var query = function query(queryString) {
+    debug(queryString);
+    return request(queryString)
       .then(function(response) {
         debug(response.rows);
         var data = response.rows;
