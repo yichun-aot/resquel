@@ -2,8 +2,9 @@
   "name": "resquel",
   "version": "1.0.0",
   "description": "Easily convert a SQL database into a REST API using Express.js.",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
+    "start": "ts-node src/index.ts",
     "test": "mocha -t 20000 -b test/mysql.js",
     "mssql": "mocha -t 20000 -b test/mssql.js",
     "postgresql": "mocha -t 20000 -b test/postgresql.js",
@@ -12,6 +13,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/body-parser": "^1.19.0",
+    "@types/debug": "^4.1.5",
+    "@types/express": "^4.17.11",
+    "@types/lodash": "^4.14.168",
+    "@types/method-override": "^0.0.31",
+    "@types/mssql": "^6.0.7",
+    "@types/mysql": "^2.15.17",
     "basic-auth-connect": "^1.0.0",
     "body-parser": "^1.15.0",
     "debug": "^2.2.0",
@@ -27,7 +35,14 @@
     "chance": "^1.0.4",
     "eslint": "^3.2.2",
     "eslint-config-formio": "^1.1.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-import": "^2.20.1",
     "mocha": "^3.0.2",
-    "supertest": "^2.0.0"
+    "prettier": "^1.19.1",
+    "supertest": "^2.0.0",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^8.6.2",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^3.7.4"
   }
 }
