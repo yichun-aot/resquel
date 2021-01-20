@@ -1,6 +1,7 @@
 import debug from 'debug';
 import { ConfigRoute, ResquelConfig } from './types/config';
-import express, { Request, Response } from 'express';
+import { Request, Response } from 'express';
+import express from 'express';
 import methodOverride from 'method-override';
 import bodyParser from 'body-parser';
 import basicAuth from 'basic-auth-connect';
@@ -9,15 +10,16 @@ import iConnection from './interfaces/iConnection';
 import { Util } from './util';
 
 const log = debug('resquel:core');
-
 type ReturnResponse = Response & { result: any };
 export class Resquel {
-  protected connection: iConnection = null;
+  public connection: iConnection = null;
   public router = null;
-  constructor(private config: ResquelConfig) {
+  constructor(private config: ResquelConfig, autoConnect = true) {
     this.router = express.Router();
     this.routerSetup();
-    this.connectToDb();
+    if (autoConnect) {
+      this.connectToDb();
+    }
     config.routes.forEach((route, idx) => {
       this.registerRoute(route, idx);
     });
@@ -42,13 +44,14 @@ export class Resquel {
     this.connection = Util.getConnector(this.config.type || 'mssql');
     try {
       await this.connection.connect(this.config);
+      return this.connection;
     } catch (err) {
       log(`Could not connect to database %O`, err);
       throw err;
     }
   }
 
-  private async registerRoute(route: ConfigRoute, idx: number) {
+  private registerRoute(route: ConfigRoute, idx: number) {
     const method = route.method.toLowerCase();
     log(`${idx} Register Route: ${route.method} ${route.endpoint} : $O`, route);
     this.router[method](

@@ -1,16 +1,25 @@
 import debug from 'debug';
 import iConnection from 'src/interfaces/iConnection';
 import { ResquelConfig } from 'src/types/config';
-import sql, { FieldInfo, MysqlError } from 'mysql';
-import _ from 'lodash';
+import { FieldInfo, MysqlError } from 'mysql';
+import mysql from 'mysql';
+import _, { AnyKindOfDictionary } from 'lodash';
 
 const log = debug('resquel:mysql');
+type RequestResult = {
+  rows: [mysql.OkPacket, AnyKindOfDictionary[]] | AnyKindOfDictionary[];
+  fields: FieldInfo[];
+};
 
 export class MysqlConnector implements iConnection {
-  private connection: sql.Connection = null;
+  private connection: mysql.Pool = null;
 
   public async connect(config: ResquelConfig) {
-    const connectionConfig: sql.ConnectionConfig = {
+    if (this.connection) {
+      log(`Reconnect requested`);
+      this.connection.end();
+    }
+    const connectionConfig: mysql.ConnectionConfig = {
       host: config.db.server,
       user: config.db.user,
       password: config.db.password,
@@ -19,15 +28,20 @@ export class MysqlConnector implements iConnection {
     };
     log(connectionConfig);
 
-    this.connection = sql.createConnection(connectionConfig);
-    await this.connection.connect();
+    this.connection = mysql.createPool(connectionConfig);
   }
 
-  public async request(query): Promise<{ rows: any; fields: FieldInfo[] }> {
+  public async request(query): Promise<RequestResult> {
     return new Promise(async (accept, reject) => {
       this.connection.query(
         query,
-        (err: MysqlError | null, rows?: any, fields?: FieldInfo[]) => {
+        (
+          err: MysqlError | null,
+          rows?:
+            | [mysql.OkPacket, AnyKindOfDictionary[]]
+            | AnyKindOfDictionary[],
+          fields?: FieldInfo[],
+        ) => {
           if (err) {
             reject(err);
             return;
@@ -44,36 +58,18 @@ export class MysqlConnector implements iConnection {
   public async query(query) {
     log(query);
     const response = await this.request(query);
-    log(response.rows);
-
-    let data = [];
-    if (
-      response.rows instanceof Array &&
-      response.rows[0] instanceof OkPacket &&
-      response.rows[1] instanceof Array
-    ) {
-      data = _.filter(response.rows[1], function(item) {
-        return item instanceof RowDataPacket;
-      });
-    } else if (
-      typeof response.rows === 'object' &&
-      response.rows instanceof OkPacket
-    ) {
-      data = [];
+    let rows = [];
+    if (response.rows.length === 1) {
+      rows = response.rows;
     }
-
-    debug('data:');
-    debug(data);
-    var result = _.assign(
-      {
-        status: 200,
-        data: 'OK',
-      },
-      { rows: data },
-    );
-
-    return result;
-
-    return null;
+    if (response.rows.length === 2) {
+      // @ts-ignore
+      rows = response.rows[1];
+    }
+    return {
+      status: 200,
+      data: 'OK',
+      rows,
+    };
   }
 }

@@ -23,10 +23,11 @@ export type ResquelConfig = {
     user: string;
     password: string;
     server: string;
-    database: string;
-    options: {
-      instanceName: string;
+    database?: string;
+    options?: {
+      instanceName?: string;
     };
+    [key: string]: any;
   };
   routes: ConfigRoute[];
   requestTimeout?: number;

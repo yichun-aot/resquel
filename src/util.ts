@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import _, { AnyKindOfDictionary } from 'lodash';
 import { MsSqlConnector } from './connectors/mssql';
 import { MysqlConnector } from './connectors/mysql';
+import { PostgresSqlConnector } from './connectors/postgresql';
 import iConnection from './interfaces/iConnection';
 import { ConfigRoute, ConnectionType } from './types/config';
 
+type ReturnResponse = Response & { result: { status: number } };
 export class Util {
   public static getConnector(connector: ConnectionType): iConnection {
     switch (connector) {
@@ -13,7 +15,7 @@ export class Util {
       case 'mssql':
         return new MsSqlConnector();
       case 'postgresql':
-        return null;
+        return new PostgresSqlConnector();
     }
   }
   /**
@@ -108,17 +110,16 @@ export class Util {
   public static async after(
     route: ConfigRoute,
     req: Request,
-    res: Response,
+    res: ReturnResponse,
   ): Promise<void> {
     if (!route.hasOwnProperty('after') || typeof route.after !== 'function') {
       return;
     }
-    route.after(req, res, (err, result) => {
-      if (err) {
-        throw err;
-      }
-      res.status(result.status).send(result);
+    route.after(req, res, () => {
+      const result = res.result;
+      res.status(result.status as number).send(result);
       return result;
     });
   }
 }
+export default Util;
