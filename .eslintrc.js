@@ -14,7 +14,6 @@ module.exports = {
   root: true,
   env: {
     node: true,
-    jest: true,
   },
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'off',
