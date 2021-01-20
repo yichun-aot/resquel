@@ -2,9 +2,10 @@
   "port": 9999,
   "type": "mysql",
   "db": {
-    "server": "localhost",
-    "user": "root",
-    "database": "formio",
+    "user": "-- YOUR DATABASE USERNAME --",
+    "password": "-- YOUR DATABASE PASSWORD --",
+    "server": "-- YOUR DATABASE SERVER --",
+    "database": "-- YOUR DATABASE --",
     "options": {}
   }
 }

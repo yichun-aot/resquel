@@ -112,3 +112,4 @@ export class Resquel {
     );
   }
 }
+export default Resquel;

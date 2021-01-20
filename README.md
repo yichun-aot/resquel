@@ -31,14 +31,15 @@ How to use
 This library is pretty simple. You include it in your Express.js application like the following.
 
 ```
-var express = require('express');
-var resquel = require('resquel');
+import Resquel from '../../src/resquel';
+import express from 'express';
 
 // Create the Express.js application.
-var app = express();
+const app = express();
 
 // Include the resquel library.
-app.use(resquel(config));
+const resquel = new Resquel(config);
+app.use(resquel.router);
 
 // Listen to port 3000.
 app.listen(3000);
@@ -87,7 +88,7 @@ The configuration passed into the resquel library is where the magic happens.
 }
 ```
 
-Each route defines a new endpoint and maps a query to that enpoint. Within the query, you have access to the following.
+Each route defines a new endpoint and maps a query to that endpoint. Within the query, you have access to the following.
 
   - **data** - The req.body of the request.
   - **params** - The req.params of the request. Like when you use /customer/:customerId

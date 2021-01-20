@@ -4,14 +4,15 @@
   "description": "Easily convert a SQL database into a REST API using Express.js.",
   "main": "src/index.ts",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start:mysql": "ts-node example/mysql/server.ts",
+    "start:mssql": "ts-node example/mssql/server.ts",
+    "start:postgresql": "ts-node example/postgresql/server.ts",
     "test": "npm run test:mysql; npm run test:mssql; npm run test:postgresql",
-    "test:mysql": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register -t 20000 -b test/mysql.ts",
-    "test:mssql": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register -t 20000 -b test/mssql.ts",
-    "test:postgresql": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register -t 20000 -b test/postgresql.ts",
-    "lint": "eslint ."
+    "test:mysql": "mocha -r ts-node/register -t 20000 -b test/mysql.ts",
+    "test:mssql": "mocha -r ts-node/register -t 20000 -b test/mssql.ts",
+    "test:postgresql": "mocha -r ts-node/register -t 20000 -b test/postgresql.ts"
   },
-  "author": "",
+  "author": "form.io",
   "license": "ISC",
   "dependencies": {
     "basic-auth-connect": "^1.0.0",
@@ -39,7 +40,6 @@
     "@types/node": "^14.14.22",
     "@types/pg": "^7.14.9",
     "@types/supertest": "^2.0.10",
-    "chance": "^1.0.4",
     "eslint": "^3.2.2",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-import": "^2.20.1",

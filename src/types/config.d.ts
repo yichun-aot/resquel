@@ -19,6 +19,7 @@ export type ConfigRoute = {
 
 export type ResquelConfig = {
   type: ConnectionType;
+  port?: number;
   db: {
     user: string;
     password: string;
