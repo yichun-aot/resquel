@@ -49,6 +49,9 @@ export class Util {
     const data = {};
     if (req.body) {
       _.assign(data, _.get(req, 'body'));
+      _.assign(data, {
+        data: _.get(req, 'body'),
+      });
     }
     if (req.params) {
       _.assign(data, { params: _.get(req, 'params') });
