@@ -6,7 +6,6 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
-    // "allowSyntheticDefaultImports": false,
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
