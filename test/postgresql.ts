@@ -32,17 +32,17 @@ describe('postgresql tests', () => {
 
   describe('bootstrap routes', () => {
     it('add before/after route functions', done => {
-      config.routes.forEach(function(route) {
-        var type = route.method.toString().toUpperCase();
+      config.routes.forEach(route => {
+        let type = route.method.toString().toUpperCase();
         if (type === 'GET' && route.endpoint.indexOf('/:') === -1) {
           type = 'INDEX';
         }
 
-        route.before = function(req, res, next) {
+        route.before = (req, res, next) => {
           called[type].push('before');
           next();
         };
-        route.after = function(req, res, next) {
+        route.after = (req, res, next) => {
           called[type].push('after');
           next();
         };
@@ -134,7 +134,7 @@ describe('postgresql tests', () => {
             return done(err);
           }
 
-          var response = res.body;
+          const response = res.body;
           assert.strictEqual(response.rows.length, 1);
           customer = response.rows[0];
           done();
@@ -167,7 +167,7 @@ describe('postgresql tests', () => {
             return done(err);
           }
 
-          var response = res.body;
+          const response = res.body;
           assert.strictEqual(response.rows.length, 1);
           done();
         });
@@ -199,7 +199,7 @@ describe('postgresql tests', () => {
             return done(err);
           }
 
-          var response = res.body;
+          const response = res.body;
           assert.strictEqual(response.rows.length, 1);
           assert.deepStrictEqual(response.rows[0], customer);
           done();
@@ -237,7 +237,7 @@ describe('postgresql tests', () => {
             return done(err);
           }
 
-          var response = res.body;
+          const response = res.body;
           assert.strictEqual(response.rows.length, 1);
           assert.notStrictEqual(response.rows[0].firstName, customer.firstName);
           customer = response.rows[0];
@@ -271,7 +271,7 @@ describe('postgresql tests', () => {
             return done(err);
           }
 
-          var response = res.body;
+          const response = res.body;
           assert.deepStrictEqual(response.rows, []);
           customer = null;
           done();
@@ -302,7 +302,7 @@ describe('postgresql tests', () => {
             return done(err);
           }
 
-          var response = res.body;
+          const response = res.body;
           assert.strictEqual(response.rows.length, 0);
           done();
         });
