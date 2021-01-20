@@ -51,7 +51,7 @@ export class Resquel {
     }
   }
 
-  private registerRoute(route: ConfigRoute, idx: number) {
+  public registerRoute(route: ConfigRoute, idx: number) {
     const method = route.method.toLowerCase();
     log(`${idx} Register Route: ${route.method} ${route.endpoint} : $O`, route);
     this.router[method](
