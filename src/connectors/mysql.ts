@@ -20,10 +20,7 @@ export class MysqlConnector implements iConnection {
       this.connection.end();
     }
     const connectionConfig: mysql.ConnectionConfig = {
-      host: config.db.server,
-      user: config.db.user,
-      password: config.db.password,
-      database: config.db.database,
+      ...config.db,
       multipleStatements: true,
     };
     log(connectionConfig);
