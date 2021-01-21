@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 export type ConnectionType = 'mssql' | 'mysql' | 'postgresql';
-export type ConfigRouteMethods = 'get' | 'post' | 'put' | 'delete';
+export type ConfigRouteMethods = 'get' | 'post' | 'put' | 'delete' | 'index';
 export type BeforeAfter = (
   req: Request,
   res: Response,
