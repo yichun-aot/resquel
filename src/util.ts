@@ -48,10 +48,13 @@ export class Util {
   public static getRequestData(req: Request): AnyKindOfDictionary {
     const data = {};
     if (req.body) {
-      _.assign(data, _.get(req, 'body'));
       _.assign(data, {
         data: _.get(req, 'body'),
       });
+
+      // Req body intended to be access through body param (above)
+      // This is left behind for legacy reasons
+      _.assign(data, _.get(req, 'body'));
     }
     if (req.params) {
       _.assign(data, { params: _.get(req, 'params') });
