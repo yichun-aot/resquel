@@ -50,12 +50,12 @@ The configuration passed into the resquel library is where the magic happens.
 ```
 {
   "db": {
-    "user": "-- YOUR DATABASE USERNAME --",
-    "password": "-- YOUR DATABASE PASSWORD --",
-    "server": "-- YOUR DATABASE SERVER --",
-    "database": "-- YOUR DATABASE NAME --",
-    "options": {
-      "instanceName": "-- THE SERVER INSTANCE --"
+    "client": "mysql",
+    "connection": {
+      "host": "127.0.0.1",
+      "user": "your_database_user",
+      "password": "your_database_password",
+      "database": "myapp_test"
     }
   },
   "routes": [
@@ -87,6 +87,8 @@ The configuration passed into the resquel library is where the magic happens.
   ]
 }
 ```
+
+For documentation on
 
 Each route defines a new endpoint and maps a query to that endpoint. Within the query, you have access to the following.
 

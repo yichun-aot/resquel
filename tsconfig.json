@@ -14,17 +14,12 @@
       "node",
       "mocha"
     ],
-    "typeRoots": [
-      "./src/types"
-    ],
     "incremental": true
   },
   "include": [
     "src"
   ],
   "exclude": [
-    "lib",
-    "example",
-    "test"
+    "lib"
   ]
 }

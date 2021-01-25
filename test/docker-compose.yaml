@@ -1,4 +1,5 @@
 # Quick and dirty setup of database servers for the purposes of unit testing
+# Passwords here are referenced in json files in example dir
 ---
 version: 2
 

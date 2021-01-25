@@ -1,22 +1,11 @@
 import request from 'supertest';
 import assert from 'assert';
 import express from 'express';
-import Util from '../src/util';
 import faker from 'faker';
 import { Resquel, ResquelConfig } from '../src/resquel';
-import iConnection from '../src/interfaces/iConnection';
 
-const config: ResquelConfig = {
-  type: 'mysql',
-  db: {
-    server: 'localhost',
-    user: 'root',
-    password: 'password',
-    database: 'test',
-    options: {},
-  },
-  routes: require('../example/mysql/routes/index.js'),
-};
+// eslint-disable-next-line
+const config: ResquelConfig = require('../example/mysql.json');
 const app = express();
 
 describe('mysql tests', () => {
@@ -30,8 +19,8 @@ describe('mysql tests', () => {
   let customer = null;
 
   describe('bootstrap routes', () => {
-    it('add before/after route functions', done => {
-      config.routes.forEach(route => {
+    it('add before/after route functions', (done) => {
+      config.routes.forEach((route) => {
         let type = route.method.toString().toUpperCase();
         if (type === 'GET' && route.endpoint.indexOf('/:') === -1) {
           type = 'INDEX';
@@ -51,42 +40,39 @@ describe('mysql tests', () => {
   });
 
   describe('bootstrap environment', () => {
-    let connection: iConnection;
     let resquel: Resquel;
     before(() => {
-      resquel = new Resquel(config, false);
+      resquel = new Resquel(config);
     });
 
     after(() => {
       app.use(resquel.router);
     });
 
-    it('connect to the db', async () => {
-      connection = resquel.connection = Util.getConnector('mysql');
-      await connection.connect(config);
-    });
-
-    it('clear the test db', async () => {
-      await connection.request('DROP DATABASE IF EXISTS `test`');
+    it('drop the test db', async () => {
+      await resquel.knexClient.raw('DROP DATABASE IF EXISTS `test`');
     });
 
     it('create the test db', async () => {
-      await connection.request(
-        'CREATE DATABASE IF NOT EXISTS `test`;' +
-          'USE `test`;' +
-          'CREATE TABLE `customers` (' +
+      await resquel.knexClient.raw('CREATE DATABASE IF NOT EXISTS `test`');
+      await resquel.knexClient.raw('USE `test`');
+    });
+
+    it('create the test table', async () => {
+      await resquel.knexClient.raw(
+        'CREATE TABLE `customers` (' +
           '`id` int(16) unsigned NOT NULL AUTO_INCREMENT,' +
           '`firstName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
           '`lastName` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
           '`email` varchar(256) COLLATE latin1_general_ci DEFAULT NULL,' +
           'PRIMARY KEY (`id`)' +
-          ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;',
+          ') ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci',
       );
     });
   });
 
   describe('create tests', () => {
-    it('create a customer', done => {
+    it('create a customer', (done) => {
       request(app)
         .post('/customer')
         .send({
@@ -110,14 +96,14 @@ describe('mysql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.POST instanceof Array);
       assert(called.POST.length >= 1);
       assert(called.POST[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.POST instanceof Array);
       assert(called.POST.length >= 2);
       assert(called.POST[1] === 'after');
@@ -126,7 +112,7 @@ describe('mysql tests', () => {
   });
 
   describe('index tests', () => {
-    it('read the index of all customers', done => {
+    it('read the index of all customers', (done) => {
       request(app)
         .get('/customer')
         .expect('Content-Type', /json/)
@@ -142,14 +128,14 @@ describe('mysql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.INDEX instanceof Array);
       assert(called.INDEX.length >= 1);
       assert(called.INDEX[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.INDEX instanceof Array);
       assert(called.INDEX.length >= 2);
       assert(called.INDEX[1] === 'after');
@@ -158,7 +144,7 @@ describe('mysql tests', () => {
   });
 
   describe('read tests', () => {
-    it('read a customer', done => {
+    it('read a customer', (done) => {
       request(app)
         .get('/customer/' + customer.id)
         .expect('Content-Type', /json/)
@@ -175,14 +161,14 @@ describe('mysql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.GET instanceof Array);
       assert(called.GET.length >= 1);
       assert(called.GET[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.GET instanceof Array);
       assert(called.GET.length >= 2);
       assert(called.GET[1] === 'after');
@@ -191,12 +177,14 @@ describe('mysql tests', () => {
   });
 
   describe('update tests', () => {
-    it('update a customer', done => {
+    it('update a customer', (done) => {
       request(app)
         .put('/customer/' + customer.id)
         .send({
           data: {
             firstName: faker.name.findName(),
+            lastName: faker.name.lastName(),
+            email: faker.internet.email(),
           },
         })
         .expect('Content-Type', /json/)
@@ -214,14 +202,14 @@ describe('mysql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.PUT instanceof Array);
       assert(called.PUT.length >= 1);
       assert(called.PUT[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.PUT instanceof Array);
       assert(called.PUT.length >= 2);
       assert(called.PUT[1] === 'after');
@@ -230,7 +218,7 @@ describe('mysql tests', () => {
   });
 
   describe('delete tests', () => {
-    it('delete a customer', done => {
+    it('delete a customer', (done) => {
       request(app)
         .delete('/customer/' + customer.id)
         .expect('Content-Type', /json/)
@@ -247,21 +235,21 @@ describe('mysql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.DELETE instanceof Array);
       assert(called.DELETE.length >= 1);
       assert(called.DELETE[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.DELETE instanceof Array);
       assert(called.DELETE.length >= 2);
       assert(called.DELETE[1] === 'after');
       done();
     });
 
-    it('no customers exist after deleting them all', done => {
+    it('no customers exist after deleting them all', (done) => {
       request(app)
         .get('/customer')
         .expect('Content-Type', /json/)

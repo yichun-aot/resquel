@@ -1,22 +1,11 @@
 import request from 'supertest';
 import assert from 'assert';
 import express from 'express';
-import Util from '../src/util';
-import _ from 'lodash';
 import { Resquel, ResquelConfig } from '../src/resquel';
-import iConnection from '../src/interfaces/iConnection';
 import faker from 'faker';
 
-const config: ResquelConfig = {
-  type: 'postgresql',
-  db: {
-    server: 'localhost',
-    user: 'postgres',
-    password: 'postgres',
-    database: 'postgres',
-  },
-  routes: require('../example/postgresql/routes/index.js'),
-};
+// eslint-disable-next-line
+const config: ResquelConfig = require('../example/postgres.json');
 
 const app = express();
 
@@ -30,8 +19,8 @@ describe('postgresql tests', () => {
   };
 
   describe('bootstrap routes', () => {
-    it('add before/after route functions', done => {
-      config.routes.forEach(route => {
+    it('add before/after route functions', (done) => {
+      config.routes.forEach((route) => {
         let type = route.method.toString().toUpperCase();
         if (type === 'GET' && route.endpoint.indexOf('/:') === -1) {
           type = 'INDEX';
@@ -51,60 +40,46 @@ describe('postgresql tests', () => {
   });
 
   describe('bootstrap environment', () => {
-    let connection: iConnection;
     let resquel: Resquel;
     before(() => {
-      resquel = new Resquel(config, false);
+      resquel = new Resquel(config);
     });
 
     after(() => {
       app.use(resquel.router);
     });
 
-    it('connect to the db', async () => {
-      connection = resquel.connection = Util.getConnector('postgresql');
-      await connection.connect(config);
-    });
-
     it('use plpgsql', async () => {
-      await connection.request('CREATE OR REPLACE LANGUAGE plpgsql;');
+      await resquel.knexClient.raw('CREATE OR REPLACE LANGUAGE plpgsql;');
     });
 
     it('clear the test db', async () => {
-      await connection.request('DROP DATABASE IF EXISTS test');
+      await resquel.knexClient.raw('DROP DATABASE IF EXISTS test');
     });
 
     it('clear the test user', async () => {
-      await connection.request('DROP USER IF EXISTS test');
+      await resquel.knexClient.raw('DROP USER IF EXISTS test');
     });
 
     it('create the test user', async () => {
-      await connection.request(`CREATE USER test WITH PASSWORD 'test'`);
+      await resquel.knexClient.raw(`CREATE USER test WITH PASSWORD 'test'`);
     });
 
     it('create the test db', async () => {
-      await connection.request(`CREATE DATABASE test WITH OWNER 'test'`);
+      await resquel.knexClient.raw(`CREATE DATABASE test WITH OWNER 'test'`);
     });
 
-    it('connect to the test db', async () => {
-      await connection.connect({
-        ...config,
-        db: {
-          ...config.db,
-          database: 'test',
-          user: 'test',
-          password: 'test',
-        },
-      });
+    it('drop table customer db', async () => {
+      await resquel.knexClient.raw(`DROP TABLE IF EXISTS customers`);
     });
 
-    it('create the test table', async () => {
-      await connection.request(
+    it('create the customers table', async () => {
+      await resquel.knexClient.raw(
         'CREATE TABLE customers' +
           '(' +
           'id serial,' +
-          '"firstName" text,' +
-          '"lastName" text,' +
+          'firstName text,' +
+          'lastName text,' +
           'email text,' +
           'PRIMARY KEY ("id"),' +
           'UNIQUE ("id")' +
@@ -116,7 +91,7 @@ describe('postgresql tests', () => {
 
   let customer = null;
   describe('create tests', () => {
-    it('create a customer', done => {
+    it('create a customer', (done) => {
       request(app)
         .post('/customer')
         .send({
@@ -132,7 +107,6 @@ describe('postgresql tests', () => {
           if (err) {
             return done(err);
           }
-
           const response = res.body;
           assert.strictEqual(response.rows.length, 1);
           customer = response.rows[0];
@@ -140,14 +114,14 @@ describe('postgresql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.POST instanceof Array);
       assert(called.POST.length >= 1);
       assert(called.POST[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.POST instanceof Array);
       assert(called.POST.length >= 2);
       assert(called.POST[1] === 'after');
@@ -156,7 +130,7 @@ describe('postgresql tests', () => {
   });
 
   describe('index tests', () => {
-    it('read the index of all customers', done => {
+    it('read the index of all customers', (done) => {
       request(app)
         .get('/customer')
         .expect('Content-Type', /json/)
@@ -172,14 +146,14 @@ describe('postgresql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.INDEX instanceof Array);
       assert(called.INDEX.length >= 1);
       assert(called.INDEX[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.INDEX instanceof Array);
       assert(called.INDEX.length >= 2);
       assert(called.INDEX[1] === 'after');
@@ -188,7 +162,7 @@ describe('postgresql tests', () => {
   });
 
   describe('read tests', () => {
-    it('read a customer', done => {
+    it('read a customer', (done) => {
       request(app)
         .get('/customer/' + customer.id)
         .expect('Content-Type', /json/)
@@ -205,14 +179,14 @@ describe('postgresql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.GET instanceof Array);
       assert(called.GET.length >= 1);
       assert(called.GET[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.GET instanceof Array);
       assert(called.GET.length >= 2);
       assert(called.GET[1] === 'after');
@@ -221,12 +195,14 @@ describe('postgresql tests', () => {
   });
 
   describe('update tests', () => {
-    it('update a customer', done => {
+    it('update a customer', (done) => {
       request(app)
         .put('/customer/' + customer.id)
         .send({
           data: {
             firstName: faker.name.firstName(),
+            lastName: faker.name.lastName(),
+            email: faker.internet.email(),
           },
         })
         .expect('Content-Type', /json/)
@@ -238,20 +214,20 @@ describe('postgresql tests', () => {
 
           const response = res.body;
           assert.strictEqual(response.rows.length, 1);
-          assert.notStrictEqual(response.rows[0].firstName, customer.firstName);
+          assert.notStrictEqual(response.rows[0].email, customer.email);
           customer = response.rows[0];
           done();
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.PUT instanceof Array);
       assert(called.PUT.length >= 1);
       assert(called.PUT[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.PUT instanceof Array);
       assert(called.PUT.length >= 2);
       assert(called.PUT[1] === 'after');
@@ -260,7 +236,7 @@ describe('postgresql tests', () => {
   });
 
   describe('delete tests', () => {
-    it('delete a customer', done => {
+    it('delete a customer', (done) => {
       request(app)
         .delete('/customer/' + customer.id)
         .expect('Content-Type', /json/)
@@ -277,21 +253,21 @@ describe('postgresql tests', () => {
         });
     });
 
-    it('the before handler was called first for the route', done => {
+    it('the before handler was called first for the route', (done) => {
       assert(called.DELETE instanceof Array);
       assert(called.DELETE.length >= 1);
       assert(called.DELETE[0] === 'before');
       done();
     });
 
-    it('the after handler was called second for the route', done => {
+    it('the after handler was called second for the route', (done) => {
       assert(called.DELETE instanceof Array);
       assert(called.DELETE.length >= 2);
       assert(called.DELETE[1] === 'after');
       done();
     });
 
-    it('no customers exist after deleting them all', done => {
+    it('no customers exist after deleting them all', (done) => {
       request(app)
         .get('/customer')
         .expect('Content-Type', /json/)
