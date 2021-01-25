@@ -8,8 +8,23 @@
     "esModuleInterop": true,
     "target": "es2017",
     "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
+    "outDir": "./lib",
+    "baseUrl": "./src",
+    "types": [
+      "node",
+      "mocha"
+    ],
+    "typeRoots": [
+      "./src/types"
+    ],
     "incremental": true
-  }
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "lib",
+    "example",
+    "test"
+  ]
 }

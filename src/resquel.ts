@@ -1,5 +1,4 @@
 import debug from 'debug';
-import { ConfigRoute, ResquelConfig } from './types/config';
 import { Request, Response } from 'express';
 import express from 'express';
 import methodOverride from 'method-override';
@@ -10,6 +9,50 @@ import iConnection from './interfaces/iConnection';
 import { Util } from './util';
 
 const log = debug('resquel:core');
+
+export declare type ConnectionType = 'mssql' | 'mysql' | 'postgresql';
+export declare type ConfigRouteMethods =
+  | 'get'
+  | 'post'
+  | 'put'
+  | 'delete'
+  | 'index';
+export declare type BeforeAfter = (
+  req: Request,
+  res: Response,
+  cb: (...args) => unknown,
+) => unknown;
+
+export declare type ConfigRoute = {
+  method: ConfigRouteMethods;
+  endpoint: string;
+  query: string | ((...args) => unknown);
+  count?: (...args) => unknown;
+  before?: BeforeAfter;
+  after?: BeforeAfter;
+};
+
+export declare type ResquelConfig = {
+  type: ConnectionType;
+  port?: number;
+  db: {
+    user: string;
+    password: string;
+    server: string;
+    database?: string;
+    options?: {
+      instanceName?: string;
+    };
+    [key: string]: any;
+  };
+  routes: ConfigRoute[];
+  requestTimeout?: number;
+  auth?: {
+    username?: string;
+    password?: string;
+  };
+};
+
 type ReturnResponse = Response & { result: any };
 export class Resquel {
   public connection: iConnection = null;
@@ -20,9 +63,7 @@ export class Resquel {
     if (autoConnect) {
       this.connectToDb();
     }
-    config.routes.forEach((route, idx) => {
-      this.registerRoute(route, idx);
-    });
+    // this.loadRoutes();
   }
 
   private routerSetup() {
@@ -51,65 +92,70 @@ export class Resquel {
     }
   }
 
-  public registerRoute(route: ConfigRoute, idx: number) {
-    const method = route.method.toLowerCase();
-    log(`${idx} Register Route: ${route.method} ${route.endpoint} : $O`, route);
-    this.router[method](
-      route.endpoint,
-      async (req: Request, res: ReturnResponse) => {
-        const queryToken = /{{\s+([^}]+)\s+}}/g;
+  // protected loadRoutes() {
+  //   this.config.routes.forEach((route, idx) => {
+  //     const method = route.method.toLowerCase();
+  //     log(
+  //       `${idx} Register Route: ${route.method} ${route.endpoint} : $O`,
+  //       route,
+  //     );
+  //     this.router[method](
+  //       route.endpoint,
+  //       async (req: Request, res: ReturnResponse) => {
+  //         const queryToken = /{{\s+([^}]+)\s+}}/g;
 
-        // Get the query.
-        let query =
-          typeof route.query === 'function'
-            ? route.query(req, res)
-            : route.query;
-        let count =
-          typeof route.count === 'function'
-            ? route.count(req, res)
-            : route.count;
+  //         // Get the query.
+  //         let query =
+  //           typeof route.query === 'function'
+  //             ? route.query(req, res)
+  //             : route.query;
+  //         let count =
+  //           typeof route.count === 'function'
+  //             ? route.count(req, res)
+  //             : route.count;
 
-        const data = Util.getRequestData(req);
+  //         const data = Util.getRequestData(req);
 
-        // Include any extra information for specific storage methods.
-        const extra = {
-          query: {
-            original: _.clone(query),
-          },
-        };
+  //         // Include any extra information for specific storage methods.
+  //         const extra = {
+  //           query: {
+  //             original: _.clone(query),
+  //           },
+  //         };
 
-        // Get the query to execute.
-        query = query.replace(queryToken, Util.queryReplace(data));
+  //         // Get the query to execute.
+  //         query = query.replace(queryToken, Util.queryReplace(data));
 
-        // If there is no query then respond with no change.
-        if (!query) {
-          return res.status(204).json({});
-        }
-        log(`${idx} ${query}`);
+  //         // If there is no query then respond with no change.
+  //         if (!query) {
+  //           return res.status(204).json({});
+  //         }
+  //         log(`${idx} ${query}`);
 
-        // Allow each sql type to customize the before/after handlers if they need to.
-        const before = this.connection.before || Util.before;
-        const after = this.connection.after || Util.after;
-        try {
-          await before(route, req, res);
+  //         // Allow each sql type to customize the before/after handlers if they need to.
+  //         const before = this.connection.before || Util.before;
+  //         const after = this.connection.after || Util.after;
+  //         try {
+  //           await before(route, req, res);
 
-          // Perform a count query.
-          let result = null;
-          if (count) {
-            count = count.replace(queryToken, Util.queryReplace(data));
-            log(`${idx} ${count}`);
-            result = await this.connection.count(count, query, extra);
-          } else {
-            result = await this.connection.query(query, extra);
-          }
-          res.result = result;
-          return after(route, req, res);
-        } catch (err) {
-          log(`${idx} Failure in route handler %O`, err);
-          return res.status(500).send(err.message || err);
-        }
-      },
-    );
-  }
+  //           // Perform a count query.
+  //           let result = null;
+  //           if (typeof count === 'string') {
+  //             count = count.replace(queryToken, Util.queryReplace(data));
+  //             log(`${idx} ${count}`);
+  //             result = await this.connection.count(count, query, extra);
+  //           } else {
+  //             result = await this.connection.query(query, extra);
+  //           }
+  //           res.result = result;
+  //           return after(route, req, res);
+  //         } catch (err) {
+  //           log(`${idx} Failure in route handler %O`, err);
+  //           return res.status(500).send(err.message || err);
+  //         }
+  //       },
+  //     );
+  //   });
+  // }
 }
 export default Resquel;

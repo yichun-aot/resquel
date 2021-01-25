@@ -100,6 +100,7 @@ build/Release
 # Dependency directories
 node_modules
 /dist
+/lib
 jspm_packages
 
 # Optional npm cache directory
@@ -164,3 +165,4 @@ fabric.properties
 # *.ipr
 
 yarn.lock
+package-lock.json

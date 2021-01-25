@@ -3,9 +3,8 @@ import assert from 'assert';
 import express from 'express';
 import Util from '../src/util';
 import _ from 'lodash';
-import { Resquel } from '../src/resquel';
+import { Resquel, ResquelConfig } from '../src/resquel';
 import iConnection from '../src/interfaces/iConnection';
-import { ResquelConfig } from '../src/types/config';
 import faker from 'faker';
 
 const config: ResquelConfig = {

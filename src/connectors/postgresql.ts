@@ -1,8 +1,8 @@
-import iConnection from 'src/interfaces/iConnection';
+import iConnection from 'interfaces/iConnection';
 import pg from 'pg';
 import debug from 'debug';
-import { ResquelConfig } from 'src/types/config';
 import { AnyKindOfDictionary } from 'lodash';
+import { ResquelConfig } from 'resquel';
 
 const log = debug('resquel:postgresql');
 

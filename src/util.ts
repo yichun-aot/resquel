@@ -4,7 +4,7 @@ import { MsSqlConnector } from './connectors/mssql';
 import { MysqlConnector } from './connectors/mysql';
 import { PostgresSqlConnector } from './connectors/postgresql';
 import iConnection from './interfaces/iConnection';
-import { ConfigRoute, ConnectionType } from './types/config';
+import { ConfigRoute, ConnectionType } from './resquel';
 
 type ReturnResponse = Response & { result: { status: number } };
 export class Util {
@@ -22,7 +22,7 @@ export class Util {
    * Escape a string for SQL Injection
    */
   public static escape(query: string) {
-    return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function(match) {
+    return query.replace(/[\0\n\r\b\t\\\'\"\x1a]/g, function (match) {
       switch (match) {
         case '\0':
           return '\\0';
@@ -46,23 +46,18 @@ export class Util {
    * Get the input data from the given request.
    */
   public static getRequestData(req: Request): AnyKindOfDictionary {
-    const data = {};
-    if (req.body) {
-      _.assign(data, {
-        data: _.get(req, 'body'),
-      });
-
-      // Req body intended to be access through body param (above)
-      // This is left behind for legacy reasons
-      _.assign(data, _.get(req, 'body'));
-    }
-    if (req.params) {
-      _.assign(data, { params: _.get(req, 'params') });
-    }
-    if (req.query) {
-      _.assign(data, { query: _.get(req, 'query') });
-    }
-    return data;
+    return {
+      ...req.body,
+      body: {
+        ...(req.body || {}),
+      },
+      params: {
+        ...(req.params || {}),
+      },
+      query: {
+        ...(req.query || {}),
+      },
+    };
   }
 
   /**

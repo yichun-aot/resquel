@@ -1,9 +1,9 @@
 import debug from 'debug';
-import iConnection from 'src/interfaces/iConnection';
-import { ResquelConfig } from 'src/types/config';
+import iConnection from 'interfaces/iConnection';
 import { FieldInfo, MysqlError } from 'mysql';
 import mysql from 'mysql';
 import _, { AnyKindOfDictionary } from 'lodash';
+import { ResquelConfig } from 'resquel';
 
 const log = debug('resquel:mysql');
 type RequestResult = {

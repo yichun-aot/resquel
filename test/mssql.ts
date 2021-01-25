@@ -1,13 +1,12 @@
 import request from 'supertest';
 import assert from 'assert';
-import { ResquelConfig } from '../src/types/config';
 import express from 'express';
 import Util from '../src/util';
-import { Resquel } from '../src/resquel';
+import { Resquel, ResquelConfig } from '../src/resquel';
 import faker from 'faker';
-
 import _ from 'lodash';
-import iConnection from 'src/interfaces/iConnection';
+import iConnection from '../src/interfaces/iConnection';
+
 let config: ResquelConfig = {
   type: 'mssql',
   db: {

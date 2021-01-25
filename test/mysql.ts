@@ -2,9 +2,8 @@ import request from 'supertest';
 import assert from 'assert';
 import express from 'express';
 import Util from '../src/util';
-import { ResquelConfig } from '../src/types/config';
 import faker from 'faker';
-import { Resquel } from '../src/resquel';
+import { Resquel, ResquelConfig } from '../src/resquel';
 import iConnection from '../src/interfaces/iConnection';
 
 const config: ResquelConfig = {

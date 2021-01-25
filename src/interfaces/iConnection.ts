@@ -1,6 +1,6 @@
 import { AnyKindOfDictionary } from 'lodash';
-import { ConfigRoute, ResquelConfig } from 'src/types/config';
 import { Request, Response } from 'express';
+import { ConfigRoute, ResquelConfig } from 'resquel';
 
 export default interface iConnection {
   /**

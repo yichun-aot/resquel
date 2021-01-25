@@ -1,8 +1,7 @@
 // Imports
-import Resquel from '../../src/resquel';
+import Resquel, { ResquelConfig } from '../../src/resquel';
 import express from 'express';
 import { join } from 'path';
-import { ResquelConfig } from 'src/types/config';
 
 // Create config
 const config: ResquelConfig = require('./config.json');
