@@ -7,7 +7,6 @@ import basicAuth from 'basic-auth-connect';
 import knex from 'knex';
 import _, { AnyKindOfDictionary } from 'lodash';
 import { v4 as uuid } from 'uuid';
-import mysql from 'mysql';
 
 const log = debug('resquel:core');
 
