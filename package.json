@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rm -rf ./lib",
     "clean:build": "yarn clean; yarn build",
-    "build": "tsc",
+    "build": "tsc -p tsconfig-build.json",
     "test": "yarn test:mysql; yarn test:mssql; yarn test:postgresql",
     "test:mysql": "mocha -r ts-node/register -t 20000 -b test/mysql.ts",
     "test:mssql": "mocha -r ts-node/register -t 20000 -b test/mssql.ts",
@@ -42,7 +42,7 @@
     "knex": "^0.21.16",
     "lodash": "^4.11.1",
     "method-override": "^2.3.5",
-    "mocha": "^3.0.2",
+    "mocha": "^8.2.1",
     "mssql": "^6.3.1",
     "mysql": "^2.18.1",
     "pg": "^8.5.1",

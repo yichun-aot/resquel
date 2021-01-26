@@ -4,7 +4,7 @@ import express from 'express';
 import { Resquel, ResquelConfig } from '../src/resquel';
 import faker from 'faker';
 
-// eslint-disable-next-line
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config: ResquelConfig = require('../example/mssql.json');
 
 const app = express();

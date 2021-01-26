@@ -10,6 +10,9 @@ import { v4 as uuid } from 'uuid';
 
 const log = debug('resquel:core');
 
+// FIXME: Types don't publish right when being pulled from a dedicated file
+// Would prefer to have these in a `resquel.d.ts` in side the src folder
+
 export declare type ConnectionType = 'mssql' | 'mysql' | 'postgresql';
 export declare type ConfigRouteMethods =
   | 'get'
@@ -17,7 +20,7 @@ export declare type ConfigRouteMethods =
   | 'put'
   | 'delete'
   | 'index';
-type PreparedQuery = [string, ...(string | QueryParamLookup)[]];
+export declare type PreparedQuery = [string, ...(string | QueryParamLookup)[]];
 type ConfigRouteQuery = string | PreparedQuery | PreparedQuery[];
 export declare type QueryParamLookup = ({
   knex: knex,
@@ -51,30 +54,34 @@ export declare type ResquelConfig = {
     password?: string;
   };
 };
+
 export class Resquel {
-  public router = null;
+  public router: express.Router = null;
   public knexClient: knex;
 
-  constructor(private config: ResquelConfig) {
-    this.knexClient = knex(config.db);
+  constructor(private resquelConfig: ResquelConfig) {
+    if (resquelConfig === null) {
+      return;
+    }
+    this.knexClient = knex(resquelConfig.db);
     this.routerSetup();
     this.loadRoutes();
   }
 
-  private routerSetup() {
+  protected routerSetup() {
     const router = (this.router = express.Router());
     router.use(bodyParser.urlencoded({ extended: true }));
     router.use(bodyParser.json());
     router.use(methodOverride('X-HTTP-Method-Override'));
 
-    const config = this.config;
+    const config = this.resquelConfig;
     if (config.auth) {
       router.use(basicAuth(config.auth.username, config.auth.password));
     }
   }
 
   protected resultProcess(result: AnyKindOfDictionary): AnyKindOfDictionary[] {
-    switch (this.config.db.client as ConnectionType) {
+    switch (this.resquelConfig.db.client as ConnectionType) {
       case 'postgresql':
         return (result as { rows: AnyKindOfDictionary[] }).rows;
       case 'mysql':
@@ -220,7 +227,7 @@ export class Resquel {
   }
 
   protected loadRoutes() {
-    this.config.routes.forEach((route, idx) => {
+    this.resquelConfig.routes.forEach((route, idx) => {
       const method = route.method.toLowerCase();
       log(
         `${idx}) Register Route: ${route.method} ${route.endpoint} : $O`,

@@ -4,7 +4,7 @@ import express from 'express';
 import faker from 'faker';
 import { Resquel, ResquelConfig } from '../src/resquel';
 
-// eslint-disable-next-line
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config: ResquelConfig = require('../example/mysql.json');
 const app = express();
 
