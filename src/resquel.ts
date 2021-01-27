@@ -1,14 +1,14 @@
 import _, { AnyKindOfDictionary } from 'lodash';
 import basicAuth from 'basic-auth-connect';
 import bodyParser from 'body-parser';
-import debug from 'debug';
 import express from 'express';
 import knex from 'knex';
+import logger from './log';
 import methodOverride from 'method-override';
 import { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 
-const log = debug('resquel:core');
+const { log, warn, debug, error } = logger('resquel');
 
 export declare type ConnectionType = 'mssql' | 'mysql' | 'postgresql' | string;
 
@@ -46,7 +46,7 @@ enum ErrorCodes {
 export interface ErrorResponse {
   errorCode: ErrorCodes;
   requestId: string;
-  rows: void[];
+  message?: string;
   status: number;
 }
 
@@ -64,19 +64,44 @@ export declare type ResquelConfig = {
 
 export class Resquel {
   public knexClient: knex;
-  public router: express.Router = null;
+  public readonly router: express.Router = express.Router();
 
   constructor(private resquelConfig: ResquelConfig) {}
 
   public async init() {
     const config = this.resquelConfig || ({} as ResquelConfig);
+    log(`routerSetup`);
     this.routerSetup(config.auth);
+
+    log(`createKnexConnections`);
     this.createKnexConnections();
+
+    log(`loadRoutes`);
     this.loadRoutes();
   }
 
+  public sendError(
+    res: Response,
+    reason: string, // Make this human understandable
+    errorCode: ErrorCodes | number,
+  ) {
+    res.locals.status = res.locals.status || 500;
+    const out: ErrorResponse = {
+      errorCode,
+      message: reason,
+      requestId: res.locals.requestId,
+      status: res.locals.status,
+    };
+    res.status(res.locals.status).send(out);
+  }
+
   public sendResponse(res: Response) {
-    res.status(res.locals.status || 200).send(res.locals.result);
+    res.locals.status = res.locals.status || 200;
+    log(
+      `[${res.locals.requestId}] Sending response w/ status ${res.locals.status}`,
+    );
+    debug(res.locals.result);
+    res.status(res.locals.status).send(res.locals.result);
   }
 
   protected createKnexConnections() {
@@ -86,10 +111,8 @@ export class Resquel {
   protected loadRoutes() {
     this.resquelConfig.routes.forEach((route, idx) => {
       const method = route.method.toLowerCase();
-      log(
-        `${idx}) Register Route: ${route.method} ${route.endpoint} : $O`,
-        route,
-      );
+      log(`${idx}) Register Route: ${route.method} ${route.endpoint}`);
+      debug(route);
       this.router[method](
         route.endpoint,
         async (req: Request, res: Response) => {
@@ -111,8 +134,12 @@ export class Resquel {
             req,
             this.knexClient,
           );
+          if (typeof result === 'number') {
+            this.sendError(res, 'processRouteQuery failed, see logs', result);
+            return;
+          }
+          res.locals.result = result || [];
           if (route.after) {
-            res.locals.result = result;
             if (route.after) {
               await new Promise((done) => {
                 route.after(req, res, async () => {
@@ -121,11 +148,11 @@ export class Resquel {
               });
             }
             if (res.writableEnded) {
-              log(`${res.locals.requestId}] Response sent by route.after`);
+              warn(`[${res.locals.requestId}] Response sent by route.after`);
               return;
             }
           }
-          log(`${res.locals.requestId}] Sending result`);
+          log(`[${res.locals.requestId}] Sending result`);
           this.sendResponse(res);
         },
       );
@@ -136,7 +163,7 @@ export class Resquel {
     routeQuery: ConfigRouteQuery,
     req: Request,
     knexClient: knex,
-  ): Promise<ErrorResponse | knex.Raw<unknown>> {
+  ): Promise<ErrorCodes | knex.Raw<unknown>> {
     // Resolve route query into an array of prepared statements.
     // Example:
     //   ["SELECT * FROM customers WHERE id=?", "params.customerId"]
@@ -180,7 +207,7 @@ export class Resquel {
 
     let result: AnyKindOfDictionary[] = null;
     for (let i = 0; i < routeQuery.length; i++) {
-      const query = routeQuery[i] as PreparedQuery;
+      const query = [...(routeQuery[i] as PreparedQuery)];
       const queryString = query.shift() as string;
       const params: string[] = [];
 
@@ -190,14 +217,10 @@ export class Resquel {
           const val = _.get(req, query[j] as string);
           if (val === undefined) {
             log(
-              `${res.locals.requestId}]: lookup failed for param "${query[j]}"`,
+              `[${res.locals.requestId}] lookup failed for param "${query[j]}"`,
             );
-            return {
-              status: 500,
-              rows: [],
-              requestId: res.locals.requestId,
-              errorCode: ErrorCodes.paramLookupFailed,
-            } as ErrorResponse;
+            debug(req.body);
+            return ErrorCodes.paramLookupFailed;
           }
           params.push(val);
         } else {
@@ -212,21 +235,18 @@ export class Resquel {
         }
       } // /params builder
       try {
-        result = this.resultProcess(await knexClient.raw(queryString, params));
-      } catch (err) {
-        log('QUERY FAILED');
-        log(
-          JSON.stringify(
-            {
-              queryString,
-              params,
-              result,
-            },
-            null,
-            '  ',
-          ),
+        result = this.resultProcess(
+          knexClient,
+          await knexClient.raw(queryString, params),
         );
-        log(err);
+      } catch (err) {
+        error('QUERY FAILED');
+        error({
+          queryString,
+          params,
+          result,
+        });
+        error(err);
         continue;
       }
       // Example result:
@@ -258,8 +278,11 @@ export class Resquel {
     };
   }
 
-  protected resultProcess(result: AnyKindOfDictionary): AnyKindOfDictionary[] {
-    switch (this.resquelConfig.db.client as ConnectionType) {
+  protected resultProcess(
+    knexClient: knex,
+    result: AnyKindOfDictionary,
+  ): AnyKindOfDictionary[] {
+    switch (knexClient.client.config.client as ConnectionType) {
       case 'postgresql':
         return (result as { rows: AnyKindOfDictionary[] }).rows;
       case 'mysql':
@@ -276,7 +299,7 @@ export class Resquel {
   }
 
   protected routerSetup(auth?: ResquelAuth) {
-    const router = (this.router = express.Router());
+    const { router } = this;
     router.use(bodyParser.urlencoded({ extended: true }));
     router.use(bodyParser.json());
     router.use(methodOverride('X-HTTP-Method-Override'));
