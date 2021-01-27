@@ -45,38 +45,42 @@ export interface ErrorResponse {
   requestId: string;
 }
 
+export declare type ResquelAuth = {
+  username: string;
+  password: string;
+};
 export declare type ResquelConfig = {
   port?: number;
   db: knex.Config<unknown>;
   routes: ConfigRoute[];
-  auth?: {
-    username?: string;
-    password?: string;
-  };
+  auth?: ResquelAuth;
 };
 
 export class Resquel {
   public router: express.Router = null;
   public knexClient: knex;
 
-  constructor(private resquelConfig: ResquelConfig) {
-    if (resquelConfig === null) {
-      return;
-    }
-    this.knexClient = knex(resquelConfig.db);
-    this.routerSetup();
+  constructor(private resquelConfig: ResquelConfig) {}
+
+  public async init() {
+    const config = this.resquelConfig || ({} as ResquelConfig);
+    this.routerSetup(config.auth);
+    this.createKnexConnections();
     this.loadRoutes();
   }
 
-  protected routerSetup() {
+  protected createKnexConnections() {
+    this.knexClient = knex(this.resquelConfig.db);
+  }
+
+  protected routerSetup(auth?: ResquelAuth) {
     const router = (this.router = express.Router());
     router.use(bodyParser.urlencoded({ extended: true }));
     router.use(bodyParser.json());
     router.use(methodOverride('X-HTTP-Method-Override'));
 
-    const config = this.resquelConfig;
-    if (config.auth) {
-      router.use(basicAuth(config.auth.username, config.auth.password));
+    if (auth) {
+      router.use(basicAuth(auth.username, auth.password));
     }
   }
 
@@ -100,6 +104,7 @@ export class Resquel {
   protected async processRouteQuery(
     routeQuery: ConfigRouteQuery,
     req: Request,
+    knexClient: knex,
   ): Promise<ErrorResponse | knex.Raw<unknown>> {
     // Resolve route query into an array of prepared statements.
     // Example:
@@ -168,7 +173,7 @@ export class Resquel {
           params.push(
             await (query[j] as QueryParamLookup)({
               resquel: this,
-              knex: this.knexClient,
+              knex: knexClient,
               req,
               res,
             }),
@@ -176,12 +181,10 @@ export class Resquel {
         }
       } // /params builder
       try {
-        result = this.resultProcess(
-          await this.knexClient.raw(queryString, params),
-        );
+        result = this.resultProcess(await knexClient.raw(queryString, params));
       } catch (err) {
-        console.error('QUERY FAILED');
-        console.error(
+        log('QUERY FAILED');
+        log(
           JSON.stringify(
             {
               queryString,
@@ -192,7 +195,7 @@ export class Resquel {
             '  ',
           ),
         );
-        console.error(err);
+        log(err);
         continue;
       }
       // Example result:
@@ -209,8 +212,10 @@ export class Resquel {
       // ["SELECT * FROM customer WHERE id=?", "res.locals.queries[0].id"]
       //
       // This works because `req.res` is a thing:
-      // express: After middleware.init executed, Request will contain res and next properties See: express/lib/middleware/init.js
+      // express: After middleware.init executed, Request will contain res and next properties
+      // See: express/lib/middleware/init.js
       //
+
       queries.push({
         queryString,
         params,
@@ -235,10 +240,7 @@ export class Resquel {
       );
       this.router[method](
         route.endpoint,
-        async (
-          req: Request,
-          res: Response<unknown, Record<string, unknown>>,
-        ) => {
+        async (req: Request, res: Response) => {
           // For aiding tracing in logs, all logs related to the request should contain this id
           res.locals.requestId = req.query.requestId || uuid();
           res.locals.route = route;
@@ -252,11 +254,13 @@ export class Resquel {
               });
             });
           }
-          const result = await this.processRouteQuery(route.query, req);
+          const result = await this.processRouteQuery(
+            route.query,
+            req,
+            this.knexClient,
+          );
           if (route.after) {
-            res.locals = {
-              result,
-            };
+            res.locals.result = result;
             if (route.after) {
               await new Promise((done) => {
                 route.after(req, res, async () => {
