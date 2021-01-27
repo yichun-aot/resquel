@@ -41,8 +41,9 @@ describe('mssql tests', () => {
 
   describe('bootstrap environment', () => {
     let resquel: Resquel;
-    before(() => {
+    before(async () => {
       resquel = new Resquel(config);
+      await resquel.init();
     });
 
     after(() => {

@@ -9,9 +9,9 @@
     "clean:build": "yarn clean; yarn build",
     "build": "tsc -p tsconfig-build.json",
     "test": "yarn test:mysql; yarn test:mssql; yarn test:postgresql",
-    "test:mysql": "mocha -r ts-node/register -t 20000 -b test/mysql.ts",
-    "test:mssql": "mocha -r ts-node/register -t 20000 -b test/mssql.ts",
-    "test:postgresql": "mocha -r ts-node/register -t 20000 -b test/postgresql.ts"
+    "test:mysql": "mocha -r ts-node/register --exit -t 20000 -b test/mysql.ts",
+    "test:mssql": "mocha -r ts-node/register --exit -t 20000 -b test/mssql.ts",
+    "test:postgresql": "mocha -r ts-node/register --exit -t 20000 -b test/postgresql.ts"
   },
   "author": "form.io",
   "license": "ISC",
