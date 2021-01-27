@@ -1,33 +1,36 @@
-import debug from 'debug';
-import { Request, Response } from 'express';
-import express from 'express';
-import methodOverride from 'method-override';
-import bodyParser from 'body-parser';
-import basicAuth from 'basic-auth-connect';
-import knex from 'knex';
 import _, { AnyKindOfDictionary } from 'lodash';
+import basicAuth from 'basic-auth-connect';
+import bodyParser from 'body-parser';
+import debug from 'debug';
+import express from 'express';
+import knex from 'knex';
+import methodOverride from 'method-override';
+import { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 
 const log = debug('resquel:core');
 
-// FIXME: Types don't publish right when being pulled from a dedicated file
-// Would prefer to have these in a `resquel.d.ts` in side the src folder
+export declare type ConnectionType = 'mssql' | 'mysql' | 'postgresql' | string;
 
-export declare type ConnectionType = 'mssql' | 'mysql' | 'postgresql';
 export declare type ConfigRouteMethods =
   | 'get'
   | 'post'
   | 'put'
   | 'delete'
-  | 'index';
+  | 'index'
+  | string;
+
 export declare type PreparedQuery = [string, ...(string | QueryParamLookup)[]];
+
 type ConfigRouteQuery = string | PreparedQuery | PreparedQuery[];
+
 export declare type QueryParamLookup = ({
   knex: knex,
   resquel: Resquel,
   req: Request,
   res: Response,
 }) => Promise<string>;
+
 export declare type ConfigRoute = {
   method: ConfigRouteMethods;
   endpoint: string;
@@ -35,20 +38,23 @@ export declare type ConfigRoute = {
   before?: (req: Request, res: Response, next: () => Promise<void>) => unknown;
   after?: (req: Request, res: Response, next: () => Promise<void>) => unknown;
 };
+
 enum ErrorCodes {
   paramLookupFailed = 1001,
 }
+
 export interface ErrorResponse {
-  status: number;
-  rows: void[];
   errorCode: ErrorCodes;
   requestId: string;
+  rows: void[];
+  status: number;
 }
 
 export declare type ResquelAuth = {
   username: string;
   password: string;
 };
+
 export declare type ResquelConfig = {
   port?: number;
   db: knex.Config<unknown>;
@@ -57,8 +63,8 @@ export declare type ResquelConfig = {
 };
 
 export class Resquel {
-  public router: express.Router = null;
   public knexClient: knex;
+  public router: express.Router = null;
 
   constructor(private resquelConfig: ResquelConfig) {}
 
@@ -69,36 +75,61 @@ export class Resquel {
     this.loadRoutes();
   }
 
+  public sendResponse(res: Response) {
+    res.status(res.locals.status || 200).send(res.locals.result);
+  }
+
   protected createKnexConnections() {
     this.knexClient = knex(this.resquelConfig.db);
   }
 
-  protected routerSetup(auth?: ResquelAuth) {
-    const router = (this.router = express.Router());
-    router.use(bodyParser.urlencoded({ extended: true }));
-    router.use(bodyParser.json());
-    router.use(methodOverride('X-HTTP-Method-Override'));
-
-    if (auth) {
-      router.use(basicAuth(auth.username, auth.password));
-    }
-  }
-
-  protected resultProcess(result: AnyKindOfDictionary): AnyKindOfDictionary[] {
-    switch (this.resquelConfig.db.client as ConnectionType) {
-      case 'postgresql':
-        return (result as { rows: AnyKindOfDictionary[] }).rows;
-      case 'mysql':
-        if ((result as AnyKindOfDictionary[]).length === 1) {
-          return result as AnyKindOfDictionary[];
-        }
-        if (result[0].affectedRows !== undefined) {
-          return [];
-        }
-        return result[0] as AnyKindOfDictionary[];
-      default:
-        return result as AnyKindOfDictionary[];
-    }
+  protected loadRoutes() {
+    this.resquelConfig.routes.forEach((route, idx) => {
+      const method = route.method.toLowerCase();
+      log(
+        `${idx}) Register Route: ${route.method} ${route.endpoint} : $O`,
+        route,
+      );
+      this.router[method](
+        route.endpoint,
+        async (req: Request, res: Response) => {
+          // For aiding tracing in logs, all logs related to the request should contain this id
+          res.locals.requestId = req.query.requestId || uuid();
+          res.locals.route = route;
+          log(
+            `${idx}) ${route.method} ${route.endpoint} :: ${res.locals.requestId}`,
+          );
+          if (route.before) {
+            await new Promise((done) => {
+              route.before(req, res, async () => {
+                done(null);
+              });
+            });
+          }
+          const result = await this.processRouteQuery(
+            route.query,
+            req,
+            this.knexClient,
+          );
+          if (route.after) {
+            res.locals.result = result;
+            if (route.after) {
+              await new Promise((done) => {
+                route.after(req, res, async () => {
+                  done(null);
+                });
+              });
+            }
+            if (res.writableEnded) {
+              log(`${res.locals.requestId}] Response sent by route.after`);
+              return;
+            }
+          }
+          log(`${res.locals.requestId}] Sending result`);
+          this.sendResponse(res);
+        },
+      );
+    });
   }
 
   protected async processRouteQuery(
@@ -227,57 +258,32 @@ export class Resquel {
     };
   }
 
-  public sendResponse(res: Response) {
-    res.status(res.locals.status || 200).send(res.locals.result);
+  protected resultProcess(result: AnyKindOfDictionary): AnyKindOfDictionary[] {
+    switch (this.resquelConfig.db.client as ConnectionType) {
+      case 'postgresql':
+        return (result as { rows: AnyKindOfDictionary[] }).rows;
+      case 'mysql':
+        if ((result as AnyKindOfDictionary[]).length === 1) {
+          return result as AnyKindOfDictionary[];
+        }
+        if (result[0].affectedRows !== undefined) {
+          return [];
+        }
+        return result[0] as AnyKindOfDictionary[];
+      default:
+        return result as AnyKindOfDictionary[];
+    }
   }
 
-  protected loadRoutes() {
-    this.resquelConfig.routes.forEach((route, idx) => {
-      const method = route.method.toLowerCase();
-      log(
-        `${idx}) Register Route: ${route.method} ${route.endpoint} : $O`,
-        route,
-      );
-      this.router[method](
-        route.endpoint,
-        async (req: Request, res: Response) => {
-          // For aiding tracing in logs, all logs related to the request should contain this id
-          res.locals.requestId = req.query.requestId || uuid();
-          res.locals.route = route;
-          log(
-            `${idx}) ${route.method} ${route.endpoint} :: ${res.locals.requestId}`,
-          );
-          if (route.before) {
-            await new Promise((done) => {
-              route.before(req, res, async () => {
-                done(null);
-              });
-            });
-          }
-          const result = await this.processRouteQuery(
-            route.query,
-            req,
-            this.knexClient,
-          );
-          if (route.after) {
-            res.locals.result = result;
-            if (route.after) {
-              await new Promise((done) => {
-                route.after(req, res, async () => {
-                  done(null);
-                });
-              });
-            }
-            if (res.writableEnded) {
-              log(`${res.locals.requestId}] Response sent by route.after`);
-              return;
-            }
-          }
-          log(`${res.locals.requestId}] Sending result`);
-          this.sendResponse(res);
-        },
-      );
-    });
+  protected routerSetup(auth?: ResquelAuth) {
+    const router = (this.router = express.Router());
+    router.use(bodyParser.urlencoded({ extended: true }));
+    router.use(bodyParser.json());
+    router.use(methodOverride('X-HTTP-Method-Override'));
+
+    if (auth) {
+      router.use(basicAuth(auth.username, auth.password));
+    }
   }
 }
 export default Resquel;
