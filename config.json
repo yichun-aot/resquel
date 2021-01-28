@@ -1,12 +1,11 @@
 {
-  "type": "mssql",
   "db": {
-    "user": "-- YOUR DATABASE USERNAME --",
-    "password": "-- YOUR DATABASE PASSWORD --",
-    "server": "-- YOUR DATABASE SERVER --",
-    "database": "-- YOUR DATABASE NAME --",
-    "options": {
-      "instanceName": "-- THE SERVER INSTANCE --"
+    "client": "mysql",
+    "connection": {
+      "host": "127.0.0.1",
+      "user": "your_database_user",
+      "password": "your_database_password",
+      "database": "myapp_test"
     }
   },
   "routes": [
