@@ -1,6 +1,6 @@
 {
   "name": "resquel",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Easily convert a SQL database into a REST API using Express.js.",
   "main": "./lib/resquel.js",
   "types": "./lib/resquel.d.ts",
@@ -11,7 +11,8 @@
     "test": "yarn test:mysql; yarn test:mssql; yarn test:postgresql",
     "test:mysql": "mocha -r ts-node/register --exit -t 20000 -b test/mysql.ts",
     "test:mssql": "mocha -r ts-node/register --exit -t 20000 -b test/mssql.ts",
-    "test:postgresql": "mocha -r ts-node/register --exit -t 20000 -b test/postgresql.ts"
+    "test:postgresql": "mocha -r ts-node/register --exit -t 20000 -b test/postgresql.ts",
+    "prepare": "yarn clean:build"
   },
   "author": "form.io",
   "license": "ISC",
